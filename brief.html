@@ -80,6 +80,37 @@
   }
   ul { padding-left: 22px; margin: 8px 0; }
   li { margin-bottom: 6px; }
+  .chat-example {
+    background: rgba(0,0,0,0.3);
+    padding: 18px;
+    border-radius: 12px;
+    margin-top: 12px;
+  }
+  .msg {
+    padding: 10px 14px;
+    border-radius: 14px;
+    margin-bottom: 10px;
+    max-width: 85%;
+    line-height: 1.6;
+  }
+  .msg-banno {
+    background: rgba(110, 224, 255, 0.15);
+    border: 1px solid var(--accent2);
+    margin-right: auto;
+  }
+  .msg-risa {
+    background: rgba(255, 110, 199, 0.18);
+    border: 1px solid var(--accent);
+    margin-left: auto;
+    text-align: left;
+  }
+  .msg-label {
+    font-size: 0.75em;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+  .msg-banno .msg-label { color: var(--accent2); }
+  .msg-risa .msg-label { color: var(--accent); text-align: right; }
   .process {
     background: rgba(0,0,0,0.3);
     padding: 18px;
@@ -90,7 +121,7 @@
     display: flex;
     align-items: flex-start;
     gap: 12px;
-    padding: 8px 0;
+    padding: 10px 0;
     border-bottom: 1px solid var(--border);
   }
   .process-step:last-child { border-bottom: none; }
@@ -109,20 +140,6 @@
   .step-body { flex: 1; }
   .step-title { font-weight: bold; color: var(--accent2); }
   .step-who { color: var(--gold); font-size: 0.85em; margin-left: 6px; }
-  .example {
-    background: #0a0718;
-    padding: 14px 18px;
-    border-radius: 8px;
-    border: 1px dashed var(--accent2);
-    margin: 10px 0;
-    font-family: "Hiragino Sans", sans-serif;
-    color: #e0e0ff;
-  }
-  .example-label {
-    color: var(--accent2);
-    font-size: 0.85em;
-    margin-bottom: 6px;
-  }
   .time-badge {
     display: inline-block;
     background: var(--gold);
@@ -149,7 +166,6 @@
     padding: 20px;
     font-size: 0.85em;
   }
-  .emoji { font-size: 1.2em; }
 </style>
 </head>
 <body>
@@ -158,11 +174,11 @@
 
 <header>
   <h1>Risaへ 🌸</h1>
-  <div class="subtitle">最初の「神記事」のための、大事なお願い</div>
+  <div class="subtitle">最初の「神記事」のための、大事なお話</div>
   <p class="lead">
     Risaさん、おつかれさまです。<br>
     英語圏向けNewsletter「<b style="color:var(--accent)">Risa's 200</b>」の<br>
-    <b style="color:var(--gold)">記念すべき最初の記事</b>のために、お願いしたいことがあります。
+    <b style="color:var(--gold)">記念すべき最初の記事</b>の作り方について、相談があります。
   </p>
 </header>
 
@@ -172,7 +188,7 @@
     英語圏の女性アニメファンに向けて、<b>Risaさんの20年・1000本以上の経験</b>で日本のアニメの本当の価値を伝えるNewsletterを立ち上げます。
   </p>
   <p>
-    このNewsletterの成功の9割は、<b>最初の1本の記事</b>で決まります。これを「神記事(Hero Piece)」と呼んでいて、Risaさんの存在を世界に知ってもらう切符になります。
+    成功の9割は<b>最初の1本の記事</b>で決まります。これを「神記事(Hero Piece)」と呼んでいて、Risaさんの存在を世界に知ってもらう切符になります。
   </p>
   <div class="pink-highlight">
     <b>最初の記事のタイトル(仮):</b><br>
@@ -182,142 +198,153 @@
 </div>
 
 <div class="section">
-  <h2>🎯 今回のお願い(ここが一番大事)</h2>
+  <h2>💬 方法: LINEチャットでBannoとお話する形式</h2>
   <p>
-    Risaさんにしかできない作業が<b>2つ</b>あります。
+    「1人で50本分ずっと感想を録音する」のは集中力的にキツいので、<b>Bannoさんとチャットで雑談する形</b>に変更しました。
   </p>
 
   <div class="highlight">
-    <b>①</b> <b>直近2年(2024〜2025年)の異世界アニメ 約50本</b>について、率直な感想を日本語で教えてください<br>
-    <b>②</b> その中から「これは本当に良かった!」と思える<b>ベスト5本</b>を選んでください
+    <b>流れ:</b><br>
+    ① Banno がLINEで質問を送ります<br>
+    ② Risa さんは<b>好きな時間に</b>、答えたい時だけ答える<br>
+    ③ 答えられない日は完全スルーでOK<br>
+    ④ 5〜10往復で1本の記事になる
   </div>
 
   <p>
-    <b>なぜこれがRisaさんにしかできないか:</b><br>
-    AIで代筆もできますが、そうすると英語圏にいくらでもある<b>"AIが書いた量産Newsletter"</b>と同じになって、Risaさんの独自性がゼロになります。
-    <b>実際に観た人の本音</b>こそが、このNewsletterの最大の武器です。
+    テーマは<b>Risaさんの得意な異世界・魔法少女</b>。Bannoがうまく質問を組んで、Risaさんが自然に話せるように誘導します。話が広がりそうなら広げる、疲れたら止める、全部Risaさんのペースで。
   </p>
 
-  <p>
-    手厳しくて全然OK。むしろ<b>「これは残念だった」</b>の言葉があるほど英語圏読者に刺さります。
-    嘘のない<b>本物の目利きの声</b>を待っています。
+  <p style="color: var(--muted); font-size: 0.9em;">
+    ※ 音声収録でも可能ですが、チャットの方が「ちょっとした隙間時間」でできるので推奨です。
   </p>
 </div>
 
 <div class="section">
-  <h2>🎤 やり方は3つから選べます(一番楽な方法でOK)</h2>
+  <h2>💬 会話のイメージ(こんな感じ)</h2>
+  <p>一方的に話すのではなく、こういう雑談形式です:</p>
 
-  <div class="pink-highlight">
-    <b>方法A: 音声メモ(一番ラク・推奨)</b><br>
-    スマホの録音アプリで、1本ずつ話してもらうだけ。<br>
-    「◯◯◯は主人公が…で、作画が…で、まぁまぁ」みたいな、気楽な口調で全然OKです。<br>
-    → Banno さんに音声ファイル送付
+  <div class="chat-example">
+    <div class="msg msg-banno">
+      <div class="msg-label">Banno</div>
+      Risaさん、最近見た異世界で「これはマジで良かった」って作品ある? 1本でいいから教えてほしい
+    </div>
+    <div class="msg msg-risa">
+      <div class="msg-label">Risa</div>
+      えーとね、◯◯◯◯◯が良かった。作画が本気で、特に戦闘シーンが神だった
+    </div>
+    <div class="msg msg-banno">
+      <div class="msg-label">Banno</div>
+      おー、戦闘シーンってどのへん? 具体的に
+    </div>
+    <div class="msg msg-risa">
+      <div class="msg-label">Risa</div>
+      第5話のラスト。音楽の入りも完璧で、そこだけ3回見直した
+    </div>
+    <div class="msg msg-banno">
+      <div class="msg-label">Banno</div>
+      3回! それ、いつもの2倍速じゃなくて?
+    </div>
+    <div class="msg msg-risa">
+      <div class="msg-label">Risa</div>
+      そこだけ等倍に戻した(笑) 毎回そうなるのが"本物"の基準
+    </div>
+    <div class="msg msg-banno">
+      <div class="msg-label">Banno</div>
+      それ記事にしたい(笑) ちなみに主人公の性格は? 俺TUEEE系が苦手って前言ってたよね
+    </div>
+    <div class="msg msg-risa">
+      <div class="msg-label">Risa</div>
+      そうそう、でも◯◯◯◯は違う。成長曲線が丁寧で...
+    </div>
   </div>
 
-  <div class="pink-highlight">
-    <b>方法B: 箇条書きメモ</b><br>
-    LINE / メール / メモアプリに、1作品1〜3行でOK。<br>
-    例: <i>「無職転生2期 → 主人公の成長が丁寧で作画も◎。5本入り」</i>
-  </div>
-
-  <div class="pink-highlight">
-    <b>方法C: Risaさんが一番やりやすい方法</b><br>
-    上記になくても、<b>負担にならない形</b>で提供してもらうのが一番大事です。
-  </div>
-</div>
-
-<div class="section">
-  <h2>✍️ 感想の例(こんな感じでOK)</h2>
-  <p>Risaさんの自然な言葉で大丈夫ですが、イメージ用にサンプルを置いておきます。</p>
-
-  <div class="example">
-    <div class="example-label">📺 例1 (短め)</div>
-    「<b>無職転生2期</b> — 作画が本気。特に◯話の戦闘シーンが神。主人公の心理描写が丁寧で、安っぽい俺TUEEEじゃないのが良い。声優も◎。<b>5本入り候補</b>」
-  </div>
-
-  <div class="example">
-    <div class="example-label">📺 例2 (辛口)</div>
-    「<b>◯◯◯◯◯</b> — 脚本がテンプレすぎて1.5倍速で観た。主人公が無個性で共感ゼロ。作画は平均レベル。<b>選外</b>」
-  </div>
-
-  <div class="example">
-    <div class="example-label">📺 例3 (ベスト5入り)</div>
-    「<b>◯◯◯◯◯</b> — 音楽が反則的に良い。特にEDが毎話泣ける。脚本も伏線回収が丁寧で2回観た。女性ファンは絶対好き。<b>ベスト5確定</b>」
-  </div>
-
-  <p style="margin-top:14px;">
-    <b style="color:var(--accent)">ポイント:</b> Risaさんがいつも気にしている <b>作画・声優・音楽・脚本</b> の4軸に触れてもらえると、英語読者に「この人、本物のオタクだ」が伝わります。ただし全部触れる必要はありません。<b>気になった点だけ</b>で十分です。
+  <p style="margin-top: 14px;">
+    こんな感じで、<b>普通のLINE雑談</b>になります。Risaさんが身構えずに話せれば、それがそのまま<b>記事の素材</b>になります。
   </p>
 </div>
 
 <div class="section">
-  <h2>⏱️ かかる時間の目安</h2>
-  <ul>
-    <li><span class="time-badge">30分</span> 30本くらいの作品名を思い出してリストアップ</li>
-    <li><span class="time-badge">60分</span> 各作品に1〜3分の感想を録音 or 書く</li>
-    <li><span class="time-badge">15分</span> ベスト5を決めて、それぞれに詳しめの理由</li>
-  </ul>
+  <h2>⏱️ かかる時間(大幅に軽くなりました)</h2>
+
   <div class="highlight">
-    <b>合計: 約90〜100分</b>(1日で一気にやる必要なし、分割OK!)<br>
-    <b>期限: できれば1週間以内</b>(余裕あれば・急がなくて大丈夫です)
+    <b>最初の神記事を作るまで:</b><br>
+    <span class="time-badge">1回30分</span> × 2〜3回 (1週間)<br><br>
+    <b>合計: 60〜90分</b>(分割OK、通勤・昼休み・寝る前にちょっとずつでOK)
+  </div>
+
+  <p style="margin-top: 14px;">
+    1回30分以下を区切りにして、疲れる前に止める設計です。<b>15分しか返せない日は15分でOK</b>。
+  </p>
+
+  <div class="pink-highlight">
+    <b>運営開始後の週負荷:</b><br>
+    <span class="time-badge">週25〜40分</span> が上限<br>
+    ・火曜か水曜の夜にBannoと20〜30分チャット<br>
+    ・金曜朝にできた記事を5〜10分チェック<br>
+    ・土日は完全オフ
   </div>
 </div>
 
 <div class="section">
-  <h2>🔄 この後の流れ(Risaさんの負担はここだけ)</h2>
+  <h2>🔄 記事ができるまでの流れ</h2>
   <div class="process">
     <div class="process-step">
       <div class="step-num">1</div>
       <div class="step-body">
-        <span class="step-title">50本の感想を日本語で</span>
-        <span class="step-who">👉 Risa担当</span><br>
-        <span style="color:var(--muted); font-size:0.9em;">音声 or メモ (60〜90分)</span>
+        <span class="step-title">Banno が LINE で質問</span>
+        <span class="step-who">👉 Banno</span><br>
+        <span style="color:var(--muted); font-size:0.9em;">Risaさんの得意な話題から自然に聞く</span>
       </div>
     </div>
     <div class="process-step">
       <div class="step-num">2</div>
       <div class="step-body">
-        <span class="step-title">ベスト5を選ぶ + 理由</span>
-        <span class="step-who">👉 Risa担当</span><br>
-        <span style="color:var(--muted); font-size:0.9em;">(15分)</span>
+        <span class="step-title">Risa が気軽に答える</span>
+        <span class="step-who">👉 Risa</span><br>
+        <span style="color:var(--muted); font-size:0.9em;">日本語で、いつもの口調で、好きな時間に</span>
       </div>
     </div>
     <div class="process-step">
       <div class="step-num">3</div>
       <div class="step-body">
-        <span class="step-title">AIが英訳・整形・構造化</span>
-        <span class="step-who">👉 Banno + AI</span><br>
-        <span style="color:var(--muted); font-size:0.9em;">Risaの声と熱量をそのまま英語に変換</span>
+        <span class="step-title">チャット全体を記事化</span>
+        <span class="step-who">👉 Banno</span><br>
+        <span style="color:var(--muted); font-size:0.9em;">Risaさんの声と熱量をそのまま英語記事に変換</span>
       </div>
     </div>
     <div class="process-step">
       <div class="step-num">4</div>
       <div class="step-body">
-        <span class="step-title">構造整形 + イントロ/アウトロ追加</span>
-        <span class="step-who">👉 Banno + AI</span><br>
-        <span style="color:var(--muted); font-size:0.9em;">英語圏読者が読みやすい形に</span>
+        <span class="step-title">Risa が最終チェック</span>
+        <span class="step-who">👉 Risa</span><br>
+        <span style="color:var(--muted); font-size:0.9em;">日本語訳で読んで「ここ違う」だけ指摘 (5〜10分)</span>
       </div>
     </div>
     <div class="process-step">
       <div class="step-num">5</div>
       <div class="step-body">
-        <span class="step-title">日本語訳で最終チェック</span>
-        <span class="step-who">👉 Risa担当</span><br>
-        <span style="color:var(--muted); font-size:0.9em;">「ここ違う」だけ指摘してもらうだけ (15分)</span>
-      </div>
-    </div>
-    <div class="process-step">
-      <div class="step-num">6</div>
-      <div class="step-body">
-        <span class="step-title">Beehiivで公開</span>
-        <span class="step-who">👉 AI自動</span><br>
-        <span style="color:var(--muted); font-size:0.9em;">Newsletterとして世界へ</span>
+        <span class="step-title">公開</span>
+        <span class="step-who">👉 Banno</span><br>
+        <span style="color:var(--muted); font-size:0.9em;">Beehiivで配信、SNSで拡散</span>
       </div>
     </div>
   </div>
-  <p style="margin-top:14px;">
-    <b>Risaさんの実働時間: 合計 約90〜100分</b>(Step 1・2・5のみ)
-  </p>
+</div>
+
+<div class="section">
+  <h2>💡 Risaさんにお願いしたい心構え(これだけ)</h2>
+  <ul>
+    <li><b>構えなくて大丈夫</b>。LINE雑談と全く同じでOK</li>
+    <li><b>面倒な日はスルー</b>。既読スルー歓迎、罪悪感不要</li>
+    <li><b>辛口・本音 大歓迎</b>。"つまらなかった"も貴重な情報です</li>
+    <li><b>"うまく言えない"でOK</b>。Bannoが言い換え案を出します</li>
+    <li><b>楽しくなかったら言ってください</b>。仕組みは何度でも変えます</li>
+  </ul>
+
+  <div class="highlight">
+    目的は「良いNewsletterを作ること」じゃなく、<b>Risaさんが"続けられる"こと</b>です。システムはRisaさんを支えるためにあります。
+  </div>
 </div>
 
 <div class="section">
@@ -326,7 +353,7 @@
     英語圏のアニメNewsletterはすでに無数にありますが、<b>日本在住・日本人・女性・20年筋金入り・業界出身</b>という条件を全部満たす発信者は<b>世界に一人もいません</b>。これはRisaさんだけが占有できる場所です。
   </p>
   <p>
-    最初の記事で「この人は本物だ」と英語圏読者に伝われば、Newsletterは半年〜1年で月数千ドル以上の収益を生む可能性があります。そして何より、Risaさんの<b>夢「日本のアニメ女性ファンと海外女性ファンを繋ぎたい」</b>の第一歩になります。
+    Risaさんの本当の価値は「知識の量」だけじゃなくて、<b>2倍速で観ながらも良い作品では等倍に戻す</b>あの感覚、<b>作画・声優・音楽・脚本を同時に評価する</b>目線、<b>女性視点で感じる美しさ</b>、そういう<b>Risaさんにしか持てない感覚</b>です。
   </p>
   <div class="pink-highlight">
     <b>この記事は、Risaさんの声を世界に届ける<br>
@@ -335,20 +362,20 @@
 </div>
 
 <div class="final-cta">
-  <h2>🌸 お願いしたいこと まとめ</h2>
+  <h2>🌸 最初のアクション</h2>
   <p style="font-size:1.05em;">
-    <b>① 2024〜2025年の異世界アニメ 約50本 の率直な感想</b><br>
-    <b>② その中からベスト5本 の選定と詳しい理由</b><br>
-    <b>③ 方法は音声 or メモ、一番ラクなやり方で</b>
+    <b>① Bannoの質問を待つ</b> (LINEで近日中)<br>
+    <b>② 気軽に雑談として答える</b> (15〜30分)<br>
+    <b>③ 疲れたら休む</b> (罪悪感ゼロ)
   </p>
   <p style="margin-top:18px; color:var(--muted);">
-    完成したら <b style="color:var(--accent)">Banno さんに送付</b> してください<br>
-    質問あれば遠慮なく!
+    質問や不安があれば何でもBannoに伝えてください<br>
+    仕組みはRisaさんが快適に続けられる形に合わせて変えます
   </p>
 </div>
 
 <footer>
-  Risa's 200 · Hero Piece Brief · 2026<br>
+  Risa's 200 · Hero Piece Brief (v2) · 2026<br>
   Made with 💜 for Risa
 </footer>
 
