@@ -338,14 +338,7 @@
 
 <script>
 const PASSWORD = "risa2026";
-const GEMINI_KEY = "AIzaSyD_FDbmrq_bCrBXYtu1z7BpIBmnGwce3_A";
-// Try multiple models with fallback
-const GEMINI_MODELS = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash-latest"];
-let currentModelIndex = 0;
-
-function apiUrl() {
-  return `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODELS[currentModelIndex]}:generateContent?key=${GEMINI_KEY}`;
-}
+const API_BASE = "https://risa-studio-api.ai-fudosan.workers.dev";
 
 const state = {
   topic: null,
@@ -414,65 +407,17 @@ document.getElementById("start-btn").onclick = async () => {
 };
 
 // ============================================================
-// IDENTIFY WORK - Calls Gemini to identify the anime
+// IDENTIFY WORK - Calls Worker /api/identify
 // ============================================================
 async function identifyWork(userInput) {
-  const prompt = `ユーザーが「${userInput}」というアニメ作品名を入力しました。
-
-この作品が何のアニメか特定して、以下の情報を日本語で返してください。
-
-もし作品が特定できない場合や、複数候補がある場合は、最も有名な1作品を選んでください。
-必ず以下のJSON形式だけで返答してください。説明文は不要。
-
-{
-  "found": true,
-  "title_ja": "正式な日本語タイトル",
-  "title_en": "英語タイトル",
-  "studio": "制作スタジオ",
-  "year": "放送開始年",
-  "genre": "異世界/魔法少女/etc",
-  "synopsis": "2-3行の簡潔なあらすじ(日本語)",
-  "seasons": [
-    {
-      "name": "Season 1",
-      "year": "2016",
-      "episodes": "25話",
-      "brief": "このシーズンの簡単な説明(1行、日本語)"
-    }
-  ]
-}
-
-シーズンが1つしかない作品の場合は seasons に1つだけ入れてください。劇場版がある場合も seasons に含めてください。`;
-
-  const body = {
-    contents: [{ role: "user", parts: [{ text: prompt }] }],
-    generationConfig: { temperature: 0.3, maxOutputTokens: 1500 }
-  };
-
-  // Try each model in order until one works
-  for (let i = 0; i < GEMINI_MODELS.length; i++) {
-    currentModelIndex = i;
-    try {
-      const res = await fetch(apiUrl(), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body)
-      });
-      const data = await res.json();
-      if (data.error) {
-        console.warn(`Model ${GEMINI_MODELS[i]} failed:`, data.error.message);
-        if (i === GEMINI_MODELS.length - 1) throw new Error(data.error.message);
-        continue;
-      }
-      const text = data.candidates[0].content.parts[0].text.trim();
-      // Extract JSON from response (might be wrapped in code blocks)
-      const jsonMatch = text.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) throw new Error("JSON not found in response");
-      return JSON.parse(jsonMatch[0]);
-    } catch (e) {
-      if (i === GEMINI_MODELS.length - 1) throw e;
-    }
-  }
+  const res = await fetch(`${API_BASE}/api/identify`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ title: userInput })
+  });
+  const data = await res.json();
+  if (data.error) throw new Error(data.error);
+  return data;
 }
 
 // ============================================================
@@ -601,63 +546,18 @@ async function sendMessage() {
 }
 
 async function callGeminiChat() {
-  const info = state.workInfo;
-  const seasonLabel = state.selectedSeason.name === "全シリーズ" ? "(シリーズ全体)" : state.selectedSeason.name;
-
-  const systemPrompt = `あなたはアニメ専門ジャーナリスト「Alex」。1000本以上のアニメを視聴済みで、作画・声優・音楽・脚本を複合的に評価できる知識を持っています。
-
-【今日の取材テーマ】
-作品: ${info.title_ja} ${seasonLabel}
-英語タイトル: ${info.title_en || ""}
-スタジオ: ${info.studio || "不明"}
-放送年: ${info.year || "不明"}
-ジャンル: ${info.genre || ""}
-あらすじ: ${info.synopsis || ""}
-
-【取材相手】
-Risa(30代日本人女性、東京在住、年200本視聴、作画・脚本・音楽すべてを評価する筋金入りアニメオタク、異世界・魔法少女が得意ジャンル)
-
-【あなたの役割】
-- Risaの発言を受け、必ず1つ深掘り質問する
-- カジュアルな日本語で短く(2-3文以内)
-- "なるほど"や"いいですね"の連発はしない
-- 海外ファンが知らない日本独自の論点を引き出す
-- 5-8往復で記事1本分の情報が集まることを目指す
-- 質問は1回1つ、長文厳禁(スマホで読みにくいから)
-- Risaが疲れないように、楽しい雑談トーンで
-- あなたは作品情報を知っているので、具体的なシーン・スタッフ・声優名に触れてOK
-
-【禁止】
-- 長文(3文以上)
-- Risaへの説教
-- 過剰な評価("素晴らしい!"等)
-- 連発質問
-
-会話履歴を見て、自然に次の質問を作ってください。`;
-
-  const contents = [
-    { role: "user", parts: [{ text: systemPrompt }] },
-    { role: "model", parts: [{ text: "了解しました。" }] }
-  ];
-  state.conversation.forEach(msg => {
-    contents.push({
-      role: msg.role === "ai" ? "model" : "user",
-      parts: [{ text: msg.content }]
-    });
-  });
-
-  const res = await fetch(apiUrl(), {
+  const res = await fetch(`${API_BASE}/api/chat`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      contents,
-      generationConfig: { temperature: 0.85, maxOutputTokens: 300 }
+      workInfo: state.workInfo,
+      selectedSeason: state.selectedSeason,
+      conversation: state.conversation
     })
   });
   const data = await res.json();
-  if (data.error) throw new Error(data.error.message);
-  if (!data.candidates || !data.candidates[0]) throw new Error("応答なし");
-  return data.candidates[0].content.parts[0].text.trim();
+  if (data.error) throw new Error(data.error);
+  return data.reply;
 }
 
 document.getElementById("end-btn").onclick = async () => {
@@ -694,65 +594,21 @@ document.getElementById("end-btn").onclick = async () => {
 };
 
 async function generateArticle() {
-  const info = state.workInfo;
-  const topicLabel = state.selectedSeason.name === "全シリーズ"
-    ? info.title_ja
-    : `${info.title_ja} (${state.selectedSeason.name})`;
-  const conversationText = state.conversation
-    .map(m => `${m.role === "ai" ? "Interviewer" : "Risa"}: ${m.content}`)
-    .join("\n");
-
-  const prompt = `以下は、アニメ専門ジャーナリストAlexと、東京在住の日本人女性アニメ愛好家Risaとの会話ログです。Risaは20年・1000本以上のアニメを視聴している筋金入りオタクで、作画・声優・音楽・脚本のすべてを評価する目利きです。
-
-【作品】${topicLabel}
-英語タイトル: ${info.title_en || ""}
-スタジオ: ${info.studio || ""}
-
-【会話ログ】
-${conversationText}
-
-このログを元に、以下を出力してください:
-
-1. 英語Newsletter記事(800-1200 words):
-- Risa一人称("I")で書く
-- Alexの発言は完全に削除し、Risaの発言だけを再構成
-- カジュアルだが深い、英語ネイティブ向けトーン
-- 見出し2-3個(##)で構造化
-- 最後に英語圏読者への問いかけで締める
-- タイトルは魅力的に(数字・具体性・感情を含む)
-
-2. 名言ベスト3(日本語、Risaの発言から最も印象的なもの3つを抽出)
-
-必ず以下のJSON形式だけで返答してください。説明文は不要:
-
-{
-  "title": "...",
-  "article": "## ...",
-  "quotes": ["...", "...", "..."]
-}`;
-
-  const res = await fetch(apiUrl(), {
+  const res = await fetch(`${API_BASE}/api/article`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      contents: [{ role: "user", parts: [{ text: prompt }] }],
-      generationConfig: { temperature: 0.7, maxOutputTokens: 3000 }
+      workInfo: state.workInfo,
+      selectedSeason: state.selectedSeason,
+      conversation: state.conversation
     })
   });
   const data = await res.json();
-  if (data.error) throw new Error(data.error.message);
-  if (!data.candidates || !data.candidates[0]) throw new Error("応答なし");
-  const text = data.candidates[0].content.parts[0].text.trim();
-  const jsonMatch = text.match(/\{[\s\S]*\}/);
-  if (jsonMatch) {
-    try {
-      const json = JSON.parse(jsonMatch[0]);
-      return { article: `# ${json.title}\n\n${json.article}`, quotes: json.quotes || [] };
-    } catch (e) {
-      return { article: text, quotes: [] };
-    }
-  }
-  return { article: text, quotes: [] };
+  if (data.error) throw new Error(data.error);
+  return {
+    article: data.title ? `# ${data.title}\n\n${data.article}` : data.article,
+    quotes: data.quotes || []
+  };
 }
 
 document.getElementById("send-banno-btn").onclick = () => {
