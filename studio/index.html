@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0f0a1e">
+<title>Risa's Studio</title>
+<link rel="icon" type="image/jpeg" href="../assets/risa-icon.jpeg">
+<link rel="apple-touch-icon" href="../assets/risa-icon.jpeg">
+<style>
+  :root {
+    --bg: #0f0a1e; --bg2: #1a1030; --accent: #ff6ec7; --accent2: #6ee0ff;
+    --gold: #ffd369; --text: #f5f5f5; --muted: #999; --card: #1e1538;
+    --border: #3a2458; --risa: #ff6ec7; --ai: #6ee0ff;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    height: 100%; overflow: hidden;
+    background: linear-gradient(135deg, var(--bg), var(--bg2));
+    color: var(--text);
+    font-family: -apple-system, "Hiragino Sans", "Yu Gothic UI", sans-serif;
+    font-size: 16px; line-height: 1.6;
+  }
+  body { display: flex; flex-direction: column; }
+  .screen { display: none; flex: 1; flex-direction: column; min-height: 0; }
+  .screen.active { display: flex; }
+  #screen-login { align-items: center; justify-content: center; padding: 40px 30px; text-align: center; }
+  #screen-login .logo {
+    width: 140px; height: 140px; border-radius: 50%; margin-bottom: 24px;
+    box-shadow: 0 0 40px rgba(255, 110, 199, 0.4); border: 3px solid var(--accent);
+  }
+  #screen-login h1 {
+    font-size: 1.8em;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+    margin-bottom: 6px;
+  }
+  #screen-login .subtitle { color: var(--muted); margin-bottom: 30px; font-size: 0.95em; }
+  #screen-login input {
+    width: 100%; max-width: 280px; padding: 16px 20px;
+    background: var(--card); border: 2px solid var(--border); border-radius: 12px;
+    color: var(--text); font-size: 1.1em; text-align: center; margin-bottom: 16px;
+    font-family: inherit;
+  }
+  #screen-login input:focus { outline: none; border-color: var(--accent); }
+  #screen-topic { padding: 30px 24px; overflow-y: auto; }
+  #screen-topic header { display: flex; align-items: center; gap: 14px; margin-bottom: 24px; }
+  #screen-topic header img { width: 50px; height: 50px; border-radius: 50%; border: 2px solid var(--accent); }
+  #screen-topic header .greeting { flex: 1; }
+  #screen-topic header h2 { font-size: 1.2em; color: var(--accent2); }
+  #screen-topic header p { color: var(--muted); font-size: 0.85em; }
+  .topic-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+    padding: 22px; margin-bottom: 16px;
+  }
+  .topic-card h3 { color: var(--gold); font-size: 1em; margin-bottom: 12px; }
+  .topic-card input {
+    width: 100%; padding: 14px 16px;
+    background: rgba(0,0,0,0.3); border: 2px solid var(--border); border-radius: 10px;
+    color: var(--text); font-size: 1.05em; font-family: inherit;
+  }
+  .topic-card input:focus { outline: none; border-color: var(--accent2); }
+  .quick-suggestions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  .chip {
+    background: rgba(110, 224, 255, 0.1); border: 1px solid var(--accent2);
+    color: var(--accent2); padding: 6px 14px; border-radius: 18px;
+    font-size: 0.85em; cursor: pointer;
+  }
+  .chip:active { background: rgba(110, 224, 255, 0.25); }
+  .modal-backdrop {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7); backdrop-filter: blur(6px);
+    z-index: 100; align-items: center; justify-content: center; padding: 20px;
+  }
+  .modal-backdrop.active { display: flex; }
+  .modal {
+    background: var(--card); border: 2px solid var(--accent); border-radius: 16px;
+    padding: 26px; max-width: 360px; width: 100%;
+    box-shadow: 0 20px 60px rgba(255, 110, 199, 0.3);
+  }
+  .modal h3 { color: var(--accent2); margin-bottom: 8px; font-size: 1.1em; }
+  .modal p { color: var(--text); margin-bottom: 18px; font-size: 0.95em; }
+  .modal-options { display: flex; flex-direction: column; gap: 10px; }
+  .modal-options button {
+    width: 100%; padding: 14px;
+    background: rgba(255, 110, 199, 0.1); border: 1px solid var(--accent);
+    border-radius: 10px; color: var(--text); font-size: 1em;
+    cursor: pointer; font-family: inherit; text-align: left;
+  }
+  .modal-options button:active { background: rgba(255, 110, 199, 0.25); }
+  .chat-header {
+    padding: 16px 18px;
+    background: rgba(0,0,0,0.4); backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 12px; flex-shrink: 0;
+  }
+  .chat-header img { width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--accent); }
+  .chat-header .info { flex: 1; min-width: 0; }
+  .chat-header .info-title { font-size: 0.9em; color: var(--muted); }
+  .chat-header .info-topic {
+    font-weight: bold; color: var(--gold); font-size: 1em;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .chat-header .end-btn {
+    background: var(--accent); color: #000; border: none;
+    padding: 8px 14px; border-radius: 20px; font-size: 0.85em;
+    font-weight: bold; cursor: pointer; flex-shrink: 0; font-family: inherit;
+  }
+  .chat-messages {
+    flex: 1; overflow-y: auto; padding: 20px 16px; -webkit-overflow-scrolling: touch;
+  }
+  .msg { margin-bottom: 14px; max-width: 85%; animation: slideIn 0.3s ease-out; }
+  @keyframes slideIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .msg-ai { margin-right: auto; }
+  .msg-risa { margin-left: auto; }
+  .msg-bubble {
+    padding: 12px 16px; border-radius: 18px;
+    line-height: 1.55; font-size: 1em; word-wrap: break-word;
+  }
+  .msg-ai .msg-bubble {
+    background: rgba(110, 224, 255, 0.13); border: 1px solid var(--ai);
+    border-bottom-left-radius: 4px; color: #d8f5ff;
+  }
+  .msg-risa .msg-bubble {
+    background: rgba(255, 110, 199, 0.18); border: 1px solid var(--risa);
+    border-bottom-right-radius: 4px; color: #ffe5f3;
+  }
+  .msg-typing { display: flex; gap: 5px; padding: 14px 18px; }
+  .msg-typing span {
+    width: 8px; height: 8px; background: var(--accent2);
+    border-radius: 50%; animation: typing 1.4s infinite;
+  }
+  .msg-typing span:nth-child(2) { animation-delay: 0.2s; }
+  .msg-typing span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes typing { 0%, 60%, 100% { opacity: 0.3; transform: translateY(0); } 30% { opacity: 1; transform: translateY(-4px); } }
+  .chat-input-area {
+    padding: 12px 14px; background: rgba(0,0,0,0.4); backdrop-filter: blur(10px);
+    border-top: 1px solid var(--border); display: flex; gap: 10px;
+    align-items: flex-end; flex-shrink: 0;
+  }
+  .chat-input-area textarea {
+    flex: 1; padding: 12px 16px; background: var(--card);
+    border: 2px solid var(--border); border-radius: 22px; color: var(--text);
+    font-size: 1em; font-family: inherit; resize: none;
+    min-height: 44px; max-height: 120px; line-height: 1.4;
+  }
+  .chat-input-area textarea:focus { outline: none; border-color: var(--accent); }
+  .send-btn {
+    width: 46px; height: 46px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #000; border: none; font-size: 1.4em; cursor: pointer;
+    flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+    transition: transform 0.15s;
+  }
+  .send-btn:active { transform: scale(0.92); }
+  .send-btn:disabled { opacity: 0.4; }
+  #screen-article { overflow-y: auto; padding: 24px 22px; }
+  #screen-article .article-header {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--border);
+  }
+  #screen-article .article-header img { width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--accent); }
+  #screen-article .article-header h2 { color: var(--gold); font-size: 1.1em; }
+  #article-content {
+    background: var(--card); padding: 22px; border-radius: 14px;
+    border: 1px solid var(--border); font-size: 0.95em; line-height: 1.75;
+    color: #f0f0f0; margin-bottom: 16px; white-space: pre-wrap;
+    max-height: 50vh; overflow-y: auto;
+  }
+  .quote-box {
+    background: rgba(255, 211, 105, 0.08); border: 1px dashed var(--gold);
+    padding: 16px 20px; border-radius: 12px; margin: 16px 0;
+  }
+  .quote-box-label { color: var(--gold); font-size: 0.85em; font-weight: bold; margin-bottom: 10px; }
+  .quote-box ul { padding-left: 20px; }
+  .quote-box li { margin-bottom: 6px; color: #fff5dc; }
+  .article-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
+  .btn {
+    width: 100%; padding: 16px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    color: #000; border: none; border-radius: 12px;
+    font-size: 1.05em; font-weight: bold; cursor: pointer;
+    font-family: inherit; transition: transform 0.15s;
+  }
+  .btn:active { transform: scale(0.98); }
+  .btn-secondary { background: transparent; color: var(--accent2); border: 2px solid var(--accent2); }
+  .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+  .toast {
+    position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
+    background: rgba(0,0,0,0.9); color: var(--gold);
+    padding: 12px 22px; border-radius: 24px; font-size: 0.9em;
+    z-index: 200; border: 1px solid var(--gold);
+    opacity: 0; transition: opacity 0.3s; pointer-events: none;
+  }
+  .toast.show { opacity: 1; }
+  .loader {
+    display: inline-block; width: 24px; height: 24px;
+    border: 3px solid rgba(255,110,199,0.3); border-top-color: var(--accent);
+    border-radius: 50%; animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .footer-tip {
+    text-align: center; color: var(--muted); font-size: 0.75em;
+    padding: 10px 16px; background: rgba(0,0,0,0.3); flex-shrink: 0;
+  }
+</style>
+</head>
+<body>
+
+<section id="screen-login" class="screen active">
+  <img src="../assets/risa-icon.jpeg" alt="Risa" class="logo">
+  <h1>Risa's Studio</h1>
+  <p class="subtitle">あなた専用のスタジオ 🌸</p>
+  <input id="password" type="password" placeholder="パスワード" autocomplete="off">
+  <button id="login-btn" class="btn" style="max-width:280px;">入る</button>
+</section>
+
+<section id="screen-topic" class="screen">
+  <header>
+    <img src="../assets/risa-icon.jpeg" alt="Risa">
+    <div class="greeting">
+      <h2>こんにちは Risaさん 🌸</h2>
+      <p>今日はどの作品の話をしますか?</p>
+    </div>
+  </header>
+  <div class="topic-card">
+    <h3>📺 作品名を入力</h3>
+    <input id="topic-input" type="text" placeholder="例: 葬送のフリーレン、無職転生..." autocomplete="off">
+    <div class="quick-suggestions">
+      <span class="chip" onclick="setTopic('葬送のフリーレン')">葬送のフリーレン</span>
+      <span class="chip" onclick="setTopic('無職転生')">無職転生</span>
+      <span class="chip" onclick="setTopic('リゼロ')">リゼロ</span>
+      <span class="chip" onclick="setTopic('魔法少女まどか☆マギカ')">まどマギ</span>
+      <span class="chip" onclick="setTopic('転スラ')">転スラ</span>
+    </div>
+  </div>
+  <button id="start-btn" class="btn">この作品で話す →</button>
+  <div style="height:14px;"></div>
+  <button class="btn btn-ghost" onclick="logout()">ログアウト</button>
+</section>
+
+<div id="series-modal" class="modal-backdrop">
+  <div class="modal">
+    <h3>🎬 どのシリーズですか?</h3>
+    <p id="series-title"></p>
+    <div class="modal-options" id="series-options"></div>
+  </div>
+</div>
+
+<section id="screen-chat" class="screen">
+  <header class="chat-header">
+    <img src="../assets/risa-icon.jpeg" alt="Risa">
+    <div class="info">
+      <div class="info-title">話し中</div>
+      <div class="info-topic" id="chat-topic">—</div>
+    </div>
+    <button class="end-btn" id="end-btn">記事化 ✓</button>
+  </header>
+  <div class="chat-messages" id="messages"></div>
+  <div class="chat-input-area">
+    <textarea id="chat-input" placeholder="メッセージを入力..." rows="1"></textarea>
+    <button class="send-btn" id="send-btn">▶</button>
+  </div>
+  <div class="footer-tip">疲れたら「記事化」を押して終了 🌸</div>
+</section>
+
+<section id="screen-article" class="screen">
+  <div class="article-header">
+    <img src="../assets/risa-icon.jpeg" alt="Risa">
+    <div>
+      <h2>記事ドラフト完成 ✨</h2>
+      <p style="color:var(--muted); font-size:0.85em;">英語Newsletter記事</p>
+    </div>
+  </div>
+  <div id="article-loading" style="text-align:center; padding:40px;">
+    <div class="loader"></div>
+    <p style="margin-top:14px; color:var(--muted);">記事を生成しています...</p>
+  </div>
+  <div id="article-result" style="display:none;">
+    <div id="article-content"></div>
+    <div id="quotes-box" class="quote-box" style="display:none;">
+      <div class="quote-box-label">💎 今回の名言ベスト3</div>
+      <ul id="quotes-list"></ul>
+    </div>
+    <div class="article-actions">
+      <button class="btn" id="send-banno-btn">📮 Bannoに送る</button>
+      <button class="btn btn-secondary" id="copy-btn">📋 テキストをコピー</button>
+      <button class="btn btn-ghost" onclick="goToTopic()">↻ 別の作品で話す</button>
+    </div>
+  </div>
+</section>
+
+<div id="toast" class="toast"></div>
+
+<script>
+const PASSWORD = "risa2026";
+const GEMINI_KEY = "AIzaSyD_FDbmrq_bCrBXYtu1z7BpIBmnGwce3_A";
+const GEMINI_MODEL = "gemini-2.0-flash";
+const API_BASE = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_KEY}`;
+
+const AMBIGUOUS_SERIES = {
+  "無職転生": ["1期", "2期 前半", "2期 後半", "劇場版"],
+  "進撃の巨人": ["Season 1", "Season 2", "Season 3 前半", "Season 3 後半", "Final Season前", "Final Season後", "完結編"],
+  "リゼロ": ["1期", "2期 前半", "2期 後半", "3期"],
+  "Re:ゼロ": ["1期", "2期 前半", "2期 後半", "3期"],
+  "転スラ": ["1期", "2期前半", "2期後半", "3期"],
+  "オーバーロード": ["1期", "2期", "3期", "4期", "劇場版"],
+  "鬼滅の刃": ["1期", "無限列車編", "遊郭編", "刀鍛冶の里編", "柱稽古編", "無限城編"],
+  "魔法少女まどか☆マギカ": ["TVシリーズ", "劇場版 前編・後編", "劇場版 叛逆", "劇場版 ワルプルギスの廻天"],
+  "葬送のフリーレン": ["1期"],
+  "ソードアート・オンライン": ["1期", "2期", "アリシゼーション", "劇場版"],
+  "このすば": ["1期", "2期", "3期", "劇場版"],
+  "盾の勇者": ["1期", "2期", "3期"]
+};
+
+const state = { topic: null, series: null, conversation: [], isGenerating: false };
+
+function showScreen(id) {
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+}
+function goToTopic() {
+  state.topic = null; state.series = null; state.conversation = [];
+  document.getElementById("topic-input").value = "";
+  document.getElementById("messages").innerHTML = "";
+  showScreen("screen-topic");
+}
+function logout() {
+  sessionStorage.removeItem("risa-auth");
+  state.topic = null; state.series = null; state.conversation = [];
+  showScreen("screen-login");
+  document.getElementById("password").value = "";
+}
+
+document.getElementById("login-btn").onclick = doLogin;
+document.getElementById("password").addEventListener("keydown", e => { if (e.key === "Enter") doLogin(); });
+function doLogin() {
+  const pw = document.getElementById("password").value;
+  if (pw === PASSWORD) {
+    sessionStorage.setItem("risa-auth", "1");
+    showScreen("screen-topic");
+  } else {
+    showToast("パスワードが違います");
+  }
+}
+if (sessionStorage.getItem("risa-auth") === "1") showScreen("screen-topic");
+
+function setTopic(t) { document.getElementById("topic-input").value = t; }
+document.getElementById("start-btn").onclick = () => {
+  const topic = document.getElementById("topic-input").value.trim();
+  if (!topic) { showToast("作品名を入力してください"); return; }
+  state.topic = topic;
+  const matchKey = Object.keys(AMBIGUOUS_SERIES).find(k => topic.includes(k) || k.includes(topic));
+  if (matchKey && AMBIGUOUS_SERIES[matchKey].length > 1) {
+    showSeriesModal(matchKey, AMBIGUOUS_SERIES[matchKey]);
+  } else {
+    state.series = matchKey ? AMBIGUOUS_SERIES[matchKey][0] : null;
+    startChat();
+  }
+};
+
+function showSeriesModal(title, options) {
+  document.getElementById("series-title").textContent = `『${title}』にはいくつかのシリーズがあります。どれの話をしますか?`;
+  const container = document.getElementById("series-options");
+  container.innerHTML = "";
+  options.forEach(opt => {
+    const btn = document.createElement("button");
+    btn.textContent = opt;
+    btn.onclick = () => {
+      state.series = opt;
+      document.getElementById("series-modal").classList.remove("active");
+      startChat();
+    };
+    container.appendChild(btn);
+  });
+  const allBtn = document.createElement("button");
+  allBtn.textContent = "🌐 シリーズ全体について話す";
+  allBtn.style.borderColor = "var(--gold)";
+  allBtn.style.color = "var(--gold)";
+  allBtn.onclick = () => {
+    state.series = "全シリーズ";
+    document.getElementById("series-modal").classList.remove("active");
+    startChat();
+  };
+  container.appendChild(allBtn);
+  document.getElementById("series-modal").classList.add("active");
+}
+
+function startChat() {
+  const topicLabel = state.series && state.series !== "全シリーズ" ? `${state.topic} (${state.series})` : state.topic;
+  document.getElementById("chat-topic").textContent = topicLabel;
+  showScreen("screen-chat");
+  state.conversation = [];
+  const firstMsg = `Risaさん、こんばんは🌸 今日は『${topicLabel}』について話したいんですよね!\n\n早速ですが、この作品で一番Risaさんの心に残ったシーンってどこでした? 1つでいいので教えてください。`;
+  addMessage("ai", firstMsg);
+}
+
+function addMessage(role, content) {
+  state.conversation.push({ role, content });
+  const messages = document.getElementById("messages");
+  const msgDiv = document.createElement("div");
+  msgDiv.className = `msg msg-${role}`;
+  msgDiv.innerHTML = `<div class="msg-bubble">${escapeHtml(content)}</div>`;
+  messages.appendChild(msgDiv);
+  messages.scrollTop = messages.scrollHeight;
+}
+
+function showTyping() {
+  const messages = document.getElementById("messages");
+  const typing = document.createElement("div");
+  typing.className = "msg msg-ai";
+  typing.id = "typing-indicator";
+  typing.innerHTML = `<div class="msg-bubble msg-typing"><span></span><span></span><span></span></div>`;
+  messages.appendChild(typing);
+  messages.scrollTop = messages.scrollHeight;
+}
+function hideTyping() {
+  const t = document.getElementById("typing-indicator");
+  if (t) t.remove();
+}
+
+document.getElementById("send-btn").onclick = sendMessage;
+document.getElementById("chat-input").addEventListener("keydown", e => {
+  if (e.key === "Enter" && !e.shiftKey && !isMobile()) { e.preventDefault(); sendMessage(); }
+});
+document.getElementById("chat-input").addEventListener("input", autoGrow);
+function autoGrow() {
+  const ta = document.getElementById("chat-input");
+  ta.style.height = "auto";
+  ta.style.height = Math.min(120, ta.scrollHeight) + "px";
+}
+function isMobile() { return /iPhone|iPad|Android/i.test(navigator.userAgent); }
+
+async function sendMessage() {
+  const input = document.getElementById("chat-input");
+  const text = input.value.trim();
+  if (!text || state.isGenerating) return;
+  input.value = "";
+  input.style.height = "auto";
+  addMessage("risa", text);
+  state.isGenerating = true;
+  showTyping();
+  try {
+    const reply = await callGeminiChat();
+    hideTyping();
+    addMessage("ai", reply);
+  } catch (e) {
+    hideTyping();
+    addMessage("ai", "ごめんなさい、エラーが起きました。もう一度試してください。");
+    console.error(e);
+  } finally {
+    state.isGenerating = false;
+  }
+}
+
+async function callGeminiChat() {
+  const topicLabel = state.series && state.series !== "全シリーズ" ? `${state.topic} (${state.series})` : state.topic;
+  const systemPrompt = `あなたはアニメ専門ジャーナリスト「Alex」。1000本以上のアニメを視聴済みで、作画・声優・音楽・脚本を複合的に評価できる知識を持っています。
+
+【今日の取材テーマ】
+作品: ${topicLabel}
+
+【取材相手】
+Risa(30代日本人女性、東京在住、年200本視聴、作画・脚本・音楽すべてを評価する筋金入りアニメオタク、異世界・魔法少女が得意ジャンル)
+
+【あなたの役割】
+- Risaの発言を受け、必ず1つ深掘り質問する
+- カジュアルな日本語で短く(2-3文以内)
+- "なるほど"や"いいですね"の連発はしない
+- 海外ファンが知らない日本独自の論点を引き出す
+- 5-8往復で記事1本分の情報が集まることを目指す
+- 質問は1回1つ、長文厳禁(スマホで読みにくいから)
+- Risaが疲れないように、楽しい雑談トーンで
+
+【禁止】
+- 長文(3文以上)
+- Risaへの説教
+- 評価("素晴らしい!"等)
+- 連発質問
+
+会話履歴を見て、自然に次の質問を作ってください。`;
+
+  const contents = [
+    { role: "user", parts: [{ text: systemPrompt }] },
+    { role: "model", parts: [{ text: "了解しました。" }] }
+  ];
+  state.conversation.forEach(msg => {
+    contents.push({
+      role: msg.role === "ai" ? "model" : "user",
+      parts: [{ text: msg.content }]
+    });
+  });
+
+  const res = await fetch(API_BASE, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      contents,
+      generationConfig: { temperature: 0.85, maxOutputTokens: 300 }
+    })
+  });
+  const data = await res.json();
+  if (data.error) throw new Error(data.error.message);
+  return data.candidates[0].content.parts[0].text.trim();
+}
+
+document.getElementById("end-btn").onclick = async () => {
+  if (state.conversation.length < 4) {
+    if (!confirm("会話がまだ短いですが、本当に記事化しますか?")) return;
+  }
+  showScreen("screen-article");
+  document.getElementById("article-loading").style.display = "block";
+  document.getElementById("article-result").style.display = "none";
+  try {
+    const result = await generateArticle();
+    document.getElementById("article-loading").style.display = "none";
+    document.getElementById("article-result").style.display = "block";
+    document.getElementById("article-content").textContent = result.article;
+    if (result.quotes && result.quotes.length) {
+      const ul = document.getElementById("quotes-list");
+      ul.innerHTML = "";
+      result.quotes.forEach(q => {
+        const li = document.createElement("li");
+        li.textContent = q;
+        ul.appendChild(li);
+      });
+      document.getElementById("quotes-box").style.display = "block";
+    }
+  } catch (e) {
+    document.getElementById("article-loading").innerHTML = "エラーが起きました。" + e.message;
+    console.error(e);
+  }
+};
+
+async function generateArticle() {
+  const topicLabel = state.series && state.series !== "全シリーズ" ? `${state.topic} (${state.series})` : state.topic;
+  const conversationText = state.conversation
+    .map(m => `${m.role === "ai" ? "Interviewer" : "Risa"}: ${m.content}`)
+    .join("\n");
+
+  const prompt = `以下は、アニメ専門ジャーナリストAlexと、東京在住の日本人女性アニメ愛好家Risaとの会話ログです。Risaは20年・1000本以上のアニメを視聴している筋金入りオタクで、作画・声優・音楽・脚本のすべてを評価する目利きです。
+
+【作品】${topicLabel}
+
+【会話ログ】
+${conversationText}
+
+このログを元に、以下を出力してください:
+
+1. **英語Newsletter記事(800-1200 words)**:
+   - Risa一人称("I")で書く
+   - Alexの発言は完全に削除し、Risaの発言だけを再構成
+   - カジュアルだが深い、英語ネイティブ向けトーン
+   - 見出し2-3個(##)で構造化
+   - 最後に英語圏読者への問いかけで締める
+   - タイトルは魅力的に(数字・具体性・感情を含む)
+
+2. **名言ベスト3**(日本語、Risaの発言から最も印象的なもの3つを抽出)
+
+JSON形式で返してください:
+{
+  "title": "...",
+  "article": "## ...",
+  "quotes": ["...", "...", "..."]
+}`;
+
+  const res = await fetch(API_BASE, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      contents: [{ role: "user", parts: [{ text: prompt }] }],
+      generationConfig: { temperature: 0.7, maxOutputTokens: 3000, responseMimeType: "application/json" }
+    })
+  });
+  const data = await res.json();
+  if (data.error) throw new Error(data.error.message);
+  const text = data.candidates[0].content.parts[0].text.trim();
+  try {
+    const json = JSON.parse(text);
+    return { article: `# ${json.title}\n\n${json.article}`, quotes: json.quotes || [] };
+  } catch (e) {
+    return { article: text, quotes: [] };
+  }
+}
+
+document.getElementById("send-banno-btn").onclick = () => {
+  const article = document.getElementById("article-content").textContent;
+  const quotes = Array.from(document.querySelectorAll("#quotes-list li")).map(li => li.textContent);
+  const subject = encodeURIComponent(`[Risa's Studio] 新しい記事ドラフト: ${state.topic}`);
+  const body = encodeURIComponent(
+    `Risaから新しい記事ドラフトが届きました 🌸\n\n` +
+    `作品: ${state.topic}${state.series ? " (" + state.series + ")" : ""}\n\n` +
+    `--- 名言ベスト3 ---\n${quotes.map((q,i) => `${i+1}. ${q}`).join("\n")}\n\n` +
+    `--- 記事ドラフト ---\n${article}\n\n` +
+    `--- 元会話 ---\n${state.conversation.map(m => (m.role === "ai" ? "Alex" : "Risa") + ": " + m.content).join("\n")}`
+  );
+  window.location.href = `mailto:?subject=${subject}&body=${body}`;
+  showToast("メールアプリを開きました 📮");
+};
+
+document.getElementById("copy-btn").onclick = () => {
+  const article = document.getElementById("article-content").textContent;
+  navigator.clipboard.writeText(article).then(() => showToast("コピーしました 📋"));
+};
+
+function escapeHtml(s) {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br>");
+}
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 2200);
+}
+</script>
+</body>
+</html>
