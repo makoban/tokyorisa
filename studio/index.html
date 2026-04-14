@@ -345,6 +345,7 @@ const state = {
   workInfo: null,  // { title, english_title, studio, year, seasons: [...] }
   selectedSeason: null,
   briefing: null,  // research brief from /api/research
+  sessionId: null, // Supabase session UUID
   conversation: [],
   isGenerating: false
 };
@@ -355,7 +356,7 @@ function showScreen(id) {
 }
 function goToTopic() {
   state.topic = null; state.workInfo = null; state.selectedSeason = null;
-  state.briefing = null;
+  state.briefing = null; state.sessionId = null;
   state.conversation = [];
   document.getElementById("topic-input").value = "";
   document.getElementById("messages").innerHTML = "";
@@ -471,15 +472,28 @@ async function selectSeason(idx) {
   } else {
     state.selectedSeason = seasons[idx];
   }
-  // Start chat immediately, research runs in background
+  // Show research loading screen, wait for completion
+  showResearchLoading();
+  await runResearchAndWait();
+  // Create Supabase session
+  await createSession();
+  // Now start chat
   startChat();
-  // Kick off research in background (don't await)
-  runResearchInBackground();
 }
 
-async function runResearchInBackground() {
+function showResearchLoading() {
+  const container = document.getElementById("confirm-card-container");
+  container.innerHTML = `
+    <div class="loading-card">
+      <div class="loader"></div>
+      <p style="margin-top:16px; color:var(--accent2); font-weight:bold;">Alexが下調べ中...</p>
+      <p id="research-status" style="margin-top:8px; color:var(--muted); font-size:0.85em;">複数のソースを並列で調査しています</p>
+    </div>
+  `;
+}
+
+async function runResearchAndWait() {
   try {
-    showToast("🔍 Alexが下調べ中...");
     const res = await fetch(`${API_BASE}/api/research`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -488,16 +502,56 @@ async function runResearchInBackground() {
     const data = await res.json();
     if (data.error) {
       console.warn("research failed:", data.error);
+      state.briefing = null;
       return;
     }
     state.briefing = data.briefing;
     const sources = Object.entries(data.sources || {})
       .filter(([k, v]) => v)
-      .map(([k]) => k.replace("wikipedia_", "Wiki ").replace("jikan", "MAL").replace("anilist", "AniList").replace("reddit", "Reddit"))
+      .map(([k]) => {
+        const map = { wikipedia_ja: "Wiki日", wikipedia_en: "Wiki英", jikan: "MAL", anilist: "AniList", reddit: "Reddit", grok: "Grok(X)" };
+        return map[k] || k;
+      })
       .join(" · ");
-    showToast(`✅ 下調べ完了 (${sources})`);
+    const statusEl = document.getElementById("research-status");
+    if (statusEl) statusEl.textContent = `✅ 下調べ完了: ${sources}`;
   } catch (e) {
     console.warn("research error:", e);
+  }
+}
+
+async function createSession() {
+  try {
+    const res = await fetch(`${API_BASE}/api/session/create`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        topic: state.topic,
+        workInfo: state.workInfo,
+        season: state.selectedSeason,
+        briefing: state.briefing
+      })
+    });
+    const data = await res.json();
+    if (data.session) state.sessionId = data.session.id;
+  } catch (e) {
+    console.warn("session create failed:", e);
+  }
+}
+
+async function saveSessionConversation() {
+  if (!state.sessionId) return;
+  try {
+    await fetch(`${API_BASE}/api/session/update`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id: state.sessionId,
+        conversation: state.conversation
+      })
+    });
+  } catch (e) {
+    console.warn("session save failed:", e);
   }
 }
 
@@ -565,6 +619,8 @@ async function sendMessage() {
     const reply = await callGeminiChat();
     hideTyping();
     addMessage("ai", reply);
+    // Persist conversation after each turn (fire-and-forget)
+    saveSessionConversation();
   } catch (e) {
     hideTyping();
     addMessage("ai", "ごめんなさい、エラーが起きました: " + (e.message || "不明"));
@@ -603,6 +659,19 @@ document.getElementById("end-btn").onclick = async () => {
     document.getElementById("article-loading").style.display = "none";
     document.getElementById("article-result").style.display = "block";
     document.getElementById("article-content").textContent = result.article;
+    // Persist article + quotes to Supabase
+    if (state.sessionId) {
+      fetch(`${API_BASE}/api/session/update`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: state.sessionId,
+          conversation: state.conversation,
+          article: result.article,
+          quotes: result.quotes || []
+        })
+      }).catch(e => console.warn("article save failed:", e));
+    }
     if (result.quotes && result.quotes.length) {
       const ul = document.getElementById("quotes-list");
       ul.innerHTML = "";
