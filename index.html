@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RISA アイコン選択 — Neon Scroll / Risa's 200</title>
+<style>
+  :root {
+    --bg: #0f0a1e;
+    --bg2: #1a1030;
+    --accent: #ff6ec7;
+    --accent2: #6ee0ff;
+    --gold: #ffd369;
+    --text: #f5f5f5;
+    --muted: #aaa;
+    --card: #1e1538;
+    --border: #3a2458;
+    --selected: #ff6ec7;
+    --fav: #ffd369;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: linear-gradient(135deg, var(--bg) 0%, var(--bg2) 100%);
+    color: var(--text);
+    font-family: -apple-system, "Segoe UI", "Hiragino Sans", "Yu Gothic UI", sans-serif;
+    min-height: 100vh;
+    padding: 20px;
+  }
+  header {
+    text-align: center;
+    margin-bottom: 30px;
+    padding: 30px 20px;
+    background: rgba(255, 110, 199, 0.05);
+    border-radius: 16px;
+    border: 1px solid var(--border);
+  }
+  h1 {
+    font-size: 2.2em;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 10px;
+  }
+  .subtitle { color: var(--muted); font-size: 1em; margin-bottom: 20px; }
+  .instructions {
+    background: rgba(255, 211, 105, 0.08);
+    border-left: 4px solid var(--gold);
+    padding: 15px 20px;
+    max-width: 780px;
+    margin: 20px auto 0;
+    text-align: left;
+    border-radius: 8px;
+    line-height: 1.8;
+  }
+  .instructions b { color: var(--gold); }
+
+  .profile-card {
+    max-width: 780px;
+    margin: 0 auto 0;
+    padding: 25px 30px;
+    background: linear-gradient(135deg, rgba(255,110,199,0.08), rgba(110,224,255,0.06));
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    text-align: left;
+    line-height: 1.85;
+  }
+  .profile-title {
+    font-size: 1.05em;
+    color: var(--accent2);
+    font-weight: bold;
+    margin-bottom: 10px;
+    letter-spacing: 0.03em;
+  }
+  .profile-lead {
+    color: var(--text);
+    font-size: 0.97em;
+    margin-bottom: 4px;
+  }
+  .profile-lead b { color: var(--accent); }
+  .profile-body {
+    color: var(--text);
+    font-size: 0.95em;
+    padding: 14px 18px;
+    background: rgba(0,0,0,0.25);
+    border-radius: 10px;
+    border-left: 3px solid var(--accent);
+  }
+  .profile-body b { color: var(--gold); }
+  .profile-concept {
+    margin-top: 20px;
+    padding: 16px 20px;
+    background: rgba(255, 211, 105, 0.08);
+    border-radius: 10px;
+    border: 1px dashed var(--gold);
+    font-size: 0.95em;
+  }
+  .profile-concept b { color: var(--accent); font-size: 1.1em; }
+  .concept-label {
+    color: var(--gold);
+    font-weight: bold;
+    margin-bottom: 6px;
+    font-size: 0.9em;
+  }
+
+  .status-bar {
+    position: sticky;
+    top: 10px;
+    z-index: 100;
+    background: rgba(15, 10, 30, 0.95);
+    backdrop-filter: blur(10px);
+    border: 2px solid var(--accent);
+    border-radius: 12px;
+    padding: 15px 25px;
+    margin-bottom: 25px;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+    box-shadow: 0 4px 20px rgba(255, 110, 199, 0.3);
+  }
+  .status-item { text-align: center; }
+  .status-label { color: var(--muted); font-size: 0.8em; }
+  .status-value { font-size: 1.5em; font-weight: bold; color: var(--accent2); }
+  .status-value.pick { color: var(--gold); font-size: 1.8em; }
+  .btn {
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    color: #000;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 0.9em;
+    transition: transform 0.2s;
+  }
+  .btn:hover { transform: scale(1.05); }
+  .btn.reset {
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--muted);
+  }
+
+  .group-title {
+    font-size: 1.2em;
+    color: var(--accent2);
+    margin: 30px 0 15px 5px;
+    padding-left: 12px;
+    border-left: 4px solid var(--accent);
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 20px;
+  }
+  .card {
+    background: var(--card);
+    border: 2px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    position: relative;
+    cursor: pointer;
+    transition: all 0.25s;
+  }
+  .card:hover {
+    transform: translateY(-4px);
+    border-color: var(--accent2);
+    box-shadow: 0 8px 25px rgba(110, 224, 255, 0.3);
+  }
+  .card.favorited {
+    border-color: var(--fav);
+    box-shadow: 0 0 20px rgba(255, 211, 105, 0.4);
+  }
+  .card.picked {
+    border-color: var(--accent);
+    box-shadow: 0 0 30px rgba(255, 110, 199, 0.7);
+    transform: scale(1.02);
+  }
+  .number-badge {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: rgba(0,0,0,0.8);
+    color: var(--gold);
+    font-size: 1.4em;
+    font-weight: bold;
+    padding: 6px 14px;
+    border-radius: 30px;
+    border: 2px solid var(--gold);
+    z-index: 2;
+  }
+  .card.picked .number-badge {
+    background: var(--accent);
+    color: #000;
+    border-color: var(--accent);
+  }
+  .card img {
+    width: 100%;
+    height: 260px;
+    object-fit: cover;
+    display: block;
+  }
+  .card-actions {
+    display: flex;
+    gap: 0;
+    border-top: 1px solid var(--border);
+  }
+  .card-btn {
+    flex: 1;
+    background: transparent;
+    color: var(--text);
+    border: none;
+    padding: 12px;
+    cursor: pointer;
+    font-size: 0.85em;
+    transition: background 0.2s;
+    font-family: inherit;
+  }
+  .card-btn:first-child { border-right: 1px solid var(--border); }
+  .card-btn.fav:hover { background: rgba(255, 211, 105, 0.15); color: var(--fav); }
+  .card-btn.pick:hover { background: rgba(255, 110, 199, 0.15); color: var(--accent); }
+  .card.favorited .card-btn.fav { color: var(--fav); font-weight: bold; }
+  .card.picked .card-btn.pick { color: var(--accent); font-weight: bold; }
+
+  .final-area {
+    margin-top: 40px;
+    padding: 25px;
+    background: rgba(255, 110, 199, 0.08);
+    border: 2px dashed var(--accent);
+    border-radius: 14px;
+    text-align: center;
+  }
+  .final-area h2 { color: var(--accent2); margin-bottom: 15px; }
+  .final-display {
+    font-size: 1.4em;
+    padding: 15px;
+    background: rgba(0,0,0,0.4);
+    border-radius: 10px;
+    color: var(--gold);
+    min-height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  footer {
+    text-align: center;
+    color: var(--muted);
+    margin-top: 40px;
+    padding: 20px;
+    font-size: 0.85em;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>RISA アイコン選び</h1>
+  <div class="subtitle">Risa's 200 — Brand Avatar Selection</div>
+
+  <div class="profile-card">
+    <div class="profile-title">🌸 このプロジェクトについて</div>
+    <p class="profile-lead">
+      海外の英語圏に向けて、<b>日本のアニメを女性視点で発信する Newsletter (メールマガジン)</b> を立ち上げます。
+      看板になるのが <b>Risaさん</b>。このページは、その「顔」となるアイコンをRisaさん本人に選んでもらうためのものです。
+    </p>
+
+    <div class="profile-title" style="margin-top:22px;">👤 Risaさんのプロフィール (英語メディア用)</div>
+    <div class="profile-body">
+      東京生まれ東京育ち。日本の大手芸能事務所で IT広報 を務めた後、20年前から大好きなアニメの世界にどっぷりハマる。<br>
+      現在はストリーミング中心で、<b>Netflix・U-NEXT・Amazon Prime・テレビ東京</b>(地上波でアニメに最強)などを毎日数時間必ず視聴。<br>
+      再生速度は基本 <b>1.5倍〜2.0倍</b>、ただし <b>本当に好きな作品ほど倍速を緩める</b>。<br>
+      好きなジャンルは <b>異世界・魔法少女</b> 系。<b>作画・声優・音楽・脚本</b> すべてが評価ポイントで、1回で理解しきれず2回観てさらに好きになる作品もある。<br>
+      これまでに視聴した作品は <b>1,000本以上</b>。<br>
+      夢は「<b>日本のアニメ女性ファンと、海外の女性ファンを繋いで一緒に盛り上げること</b>」。
+    </div>
+
+    <div class="profile-concept">
+      <div class="concept-label">📮 これから作るもの</div>
+      <b>Risa's 200</b> — 東京在住の日本人女性Risaが、20年・1000本以上の視聴経験と業界出身の目線で、
+      英語圏の女性アニメファン向けに届ける週刊Newsletter。
+      異世界と魔法少女を中心に、作画・声優・音楽・脚本を女性視点で語る、世界で唯一のメディア。
+    </div>
+  </div>
+
+  <div class="instructions">
+    <b>Risaさんへ 🌸 アイコンの選び方</b><br>
+    英語圏向けアニメNewsletterのブランドアイコンを決めます。全部で47案あります。<br>
+    <br>
+    <b>使い方:</b><br>
+    ① 気に入ったものを <b>「★お気に入り」</b>(何個でもOK)に入れる<br>
+    ② その中から <b>「🎯これに決める！」</b> で最終1つを選ぶ<br>
+    ③ 決まったら一番下に <b>選んだ番号</b> が表示されるので、その番号を伝えてください<br>
+    <br>
+    💡 アニメ系イラストが良いか、実写風が良いかも含めて自由に選んでください。<br>
+    💡 迷ったら「自分のキャラとして世界に出しても恥ずかしくない」を基準に。
+  </div>
+</header>
+
+<div class="status-bar">
+  <div class="status-item">
+    <div class="status-label">★ お気に入り</div>
+    <div class="status-value" id="fav-count">0</div>
+  </div>
+  <div class="status-item">
+    <div class="status-label">🎯 最終選択</div>
+    <div class="status-value pick" id="pick-number">—</div>
+  </div>
+  <button class="btn reset" onclick="resetAll()">リセット</button>
+</div>
+
+<h2 class="group-title">Group A: 30代日本人女性 (実写寄り)</h2>
+<div class="grid" id="grid-a"></div>
+
+<h2 class="group-title">Group B: Japanese woman wants (ポーズ・表情バリエ)</h2>
+<div class="grid" id="grid-b"></div>
+
+<h2 class="group-title">Group C: 美人女子 RISA イラスト化</h2>
+<div class="grid" id="grid-c"></div>
+
+<h2 class="group-title">Group D: 美人女子 イラスト化 (バリエ豊富)</h2>
+<div class="grid" id="grid-d"></div>
+
+<div class="final-area">
+  <h2>🎯 最終選択</h2>
+  <div class="final-display" id="final-display">まだ選ばれていません</div>
+  <p style="margin-top:15px; color:var(--muted);">この番号を Banno さんに伝えてください</p>
+</div>
+
+<footer>
+  Neon Scroll Brand Selection Tool · 47 candidates · Made with 💜 for Risa
+</footer>
+
+<script>
+const folder = "アイコン案/";
+
+const groupA = [
+  "30s_Japanese_woman_202604141051.jpeg",
+  "30s_Japanese_woman_202604141052.jpeg",
+  "30s_Japanese_woman_202604141052_2.jpeg",
+  "30s_Japanese_woman_202604141052_3.jpeg",
+  "30s_Japanese_woman_202604141052_4.jpeg",
+  "30s_Japanese_woman_202604141052_5.jpeg",
+  "30s_Japanese_woman_202604141052_6.jpeg"
+];
+
+const groupB = [
+  "Japanese_woman_wants_202604141051.jpeg",
+  "Japanese_woman_wants_202604141051_2.jpeg",
+  "Japanese_woman_wants_202604141051_3.jpeg",
+  "Japanese_woman_wants_202604141051_4.jpeg",
+  "Japanese_woman_wants_202604141051_5.jpeg",
+  "Japanese_woman_wants_202604141051_6.jpeg",
+  "Japanese_woman_wants_202604141051_7.jpeg",
+  "Japanese_woman_wants_202604141051_8.jpeg",
+  "Japanese_woman_wants_202604141051_9.jpeg",
+  "Japanese_woman_wants_202604141052.jpeg",
+  "Japanese_woman_wants_202604141052_2.jpeg",
+  "Japanese_woman_wants_202604141052_3.jpeg"
+];
+
+const groupC = [
+  "美人女子RISAイラストアイコン化_202604141051.jpeg",
+  "美人女子RISAイラストアイコン化_202604141052.jpeg",
+  "美人女子RISAイラストアイコン化_202604141052_2.jpeg",
+  "美人女子RISAイラストアイコン化_202604141052_3.jpeg"
+];
+
+const groupD = [
+  "美人女子イラストアイコン化_202604141051.jpeg",
+  "美人女子イラストアイコン化_202604141051_2.jpeg",
+  "美人女子イラストアイコン化_202604141051_3.jpeg",
+  "美人女子イラストアイコン化_202604141051_4.jpeg",
+  "美人女子イラストアイコン化_202604141051_5.jpeg",
+  "美人女子イラストアイコン化_202604141051_6.jpeg",
+  "美人女子イラストアイコン化_202604141051_7.jpeg",
+  "美人女子イラストアイコン化_202604141051_8.jpeg",
+  "美人女子イラストアイコン化_202604141051_9.jpeg",
+  "美人女子イラストアイコン化_202604141051_10.jpeg",
+  "美人女子イラストアイコン化_202604141051_11.jpeg",
+  "美人女子イラストアイコン化_202604141051_12.jpeg",
+  "美人女子イラストアイコン化_202604141051_13.jpeg",
+  "美人女子イラストアイコン化_202604141052.jpeg",
+  "美人女子イラストアイコン化_202604141052_2.jpeg",
+  "美人女子イラストアイコン化_202604141052_3.jpeg",
+  "美人女子イラストアイコン化_202604141052_4.jpeg",
+  "美人女子イラストアイコン化_202604141052_5.jpeg",
+  "美人女子イラストアイコン化_202604141052_6.jpeg",
+  "美人女子イラストアイコン化_202604141052_7.jpeg",
+  "美人女子イラストアイコン化_202604141052_8.jpeg",
+  "美人女子イラストアイコン化_202604141052_9.jpeg",
+  "美人女子イラストアイコン化_202604141052_10.jpeg",
+  "美人女子イラストアイコン化_202604141052_11.jpeg"
+];
+
+const favorites = new Set();
+let picked = null;
+let counter = 0;
+
+function renderGroup(files, gridId) {
+  const grid = document.getElementById(gridId);
+  files.forEach(file => {
+    counter++;
+    const n = counter;
+    const card = document.createElement("div");
+    card.className = "card";
+    card.id = "card-" + n;
+    card.innerHTML = `
+      <div class="number-badge">#${n}</div>
+      <img src="${folder}${encodeURIComponent(file)}" alt="Icon ${n}" loading="lazy">
+      <div class="card-actions">
+        <button class="card-btn fav" onclick="toggleFav(${n}, event)">★ お気に入り</button>
+        <button class="card-btn pick" onclick="setPick(${n}, event)">🎯 これに決める！</button>
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+function toggleFav(n, e) {
+  if (e) e.stopPropagation();
+  const card = document.getElementById("card-" + n);
+  if (favorites.has(n)) {
+    favorites.delete(n);
+    card.classList.remove("favorited");
+  } else {
+    favorites.add(n);
+    card.classList.add("favorited");
+  }
+  document.getElementById("fav-count").textContent = favorites.size;
+}
+
+function setPick(n, e) {
+  if (e) e.stopPropagation();
+  if (picked !== null) {
+    const oldCard = document.getElementById("card-" + picked);
+    if (oldCard) oldCard.classList.remove("picked");
+  }
+  picked = n;
+  const card = document.getElementById("card-" + n);
+  card.classList.add("picked");
+  document.getElementById("pick-number").textContent = "#" + n;
+  document.getElementById("final-display").innerHTML =
+    `✨ #${n} に決定！ <br><span style="font-size:0.7em; color:var(--accent2);">この番号を伝えてください</span>`;
+  card.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+function resetAll() {
+  if (!confirm("全ての選択をリセットしますか？")) return;
+  favorites.clear();
+  picked = null;
+  document.querySelectorAll(".card").forEach(c => {
+    c.classList.remove("favorited", "picked");
+  });
+  document.getElementById("fav-count").textContent = "0";
+  document.getElementById("pick-number").textContent = "—";
+  document.getElementById("final-display").textContent = "まだ選ばれていません";
+}
+
+renderGroup(groupA, "grid-a");
+renderGroup(groupB, "grid-b");
+renderGroup(groupC, "grid-c");
+renderGroup(groupD, "grid-d");
+</script>
+
+</body>
+</html>
