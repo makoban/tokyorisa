@@ -344,6 +344,7 @@ const state = {
   topic: null,
   workInfo: null,  // { title, english_title, studio, year, seasons: [...] }
   selectedSeason: null,
+  briefing: null,  // research brief from /api/research
   conversation: [],
   isGenerating: false
 };
@@ -354,6 +355,7 @@ function showScreen(id) {
 }
 function goToTopic() {
   state.topic = null; state.workInfo = null; state.selectedSeason = null;
+  state.briefing = null;
   state.conversation = [];
   document.getElementById("topic-input").value = "";
   document.getElementById("messages").innerHTML = "";
@@ -462,14 +464,41 @@ function renderConfirmScreen(info) {
   container.innerHTML = html;
 }
 
-function selectSeason(idx) {
+async function selectSeason(idx) {
   const seasons = state.workInfo.seasons || [];
   if (idx === -1) {
     state.selectedSeason = { name: "全シリーズ", brief: "全シーズン" };
   } else {
     state.selectedSeason = seasons[idx];
   }
+  // Start chat immediately, research runs in background
   startChat();
+  // Kick off research in background (don't await)
+  runResearchInBackground();
+}
+
+async function runResearchInBackground() {
+  try {
+    showToast("🔍 Alexが下調べ中...");
+    const res = await fetch(`${API_BASE}/api/research`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ workInfo: state.workInfo })
+    });
+    const data = await res.json();
+    if (data.error) {
+      console.warn("research failed:", data.error);
+      return;
+    }
+    state.briefing = data.briefing;
+    const sources = Object.entries(data.sources || {})
+      .filter(([k, v]) => v)
+      .map(([k]) => k.replace("wikipedia_", "Wiki ").replace("jikan", "MAL").replace("anilist", "AniList").replace("reddit", "Reddit"))
+      .join(" · ");
+    showToast(`✅ 下調べ完了 (${sources})`);
+  } catch (e) {
+    console.warn("research error:", e);
+  }
 }
 
 // ============================================================
@@ -552,6 +581,7 @@ async function callGeminiChat() {
     body: JSON.stringify({
       workInfo: state.workInfo,
       selectedSeason: state.selectedSeason,
+      briefing: state.briefing,
       conversation: state.conversation
     })
   });
