@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Risaへ — 最初の記事のお願い | Risa's 200</title>
+<style>
+  :root {
+    --bg: #0f0a1e;
+    --bg2: #1a1030;
+    --accent: #ff6ec7;
+    --accent2: #6ee0ff;
+    --gold: #ffd369;
+    --text: #f5f5f5;
+    --muted: #aaa;
+    --card: #1e1538;
+    --border: #3a2458;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: linear-gradient(135deg, var(--bg) 0%, var(--bg2) 100%);
+    color: var(--text);
+    font-family: -apple-system, "Segoe UI", "Hiragino Sans", "Yu Gothic UI", sans-serif;
+    min-height: 100vh;
+    padding: 20px;
+    line-height: 1.85;
+  }
+  .wrap { max-width: 780px; margin: 0 auto; }
+  header {
+    text-align: center;
+    margin-bottom: 30px;
+    padding: 30px 25px;
+    background: rgba(255, 110, 199, 0.05);
+    border-radius: 16px;
+    border: 1px solid var(--border);
+  }
+  h1 {
+    font-size: 2em;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 8px;
+  }
+  .subtitle { color: var(--muted); font-size: 0.95em; }
+  .lead {
+    margin: 20px 0 0;
+    font-size: 1.05em;
+    color: var(--text);
+  }
+  .section {
+    margin-bottom: 28px;
+    padding: 24px 28px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+  }
+  .section h2 {
+    font-size: 1.15em;
+    color: var(--accent2);
+    margin-bottom: 14px;
+    padding-left: 12px;
+    border-left: 4px solid var(--accent);
+  }
+  .section p { margin-bottom: 10px; }
+  .section b { color: var(--gold); }
+  .highlight {
+    background: rgba(255, 211, 105, 0.08);
+    border-left: 4px solid var(--gold);
+    padding: 14px 18px;
+    margin: 14px 0;
+    border-radius: 8px;
+  }
+  .pink-highlight {
+    background: rgba(255, 110, 199, 0.08);
+    border-left: 4px solid var(--accent);
+    padding: 14px 18px;
+    margin: 14px 0;
+    border-radius: 8px;
+  }
+  ul { padding-left: 22px; margin: 8px 0; }
+  li { margin-bottom: 6px; }
+  .process {
+    background: rgba(0,0,0,0.3);
+    padding: 18px;
+    border-radius: 10px;
+    margin-top: 10px;
+  }
+  .process-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .process-step:last-child { border-bottom: none; }
+  .step-num {
+    background: var(--accent);
+    color: #000;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    flex-shrink: 0;
+  }
+  .step-body { flex: 1; }
+  .step-title { font-weight: bold; color: var(--accent2); }
+  .step-who { color: var(--gold); font-size: 0.85em; margin-left: 6px; }
+  .example {
+    background: #0a0718;
+    padding: 14px 18px;
+    border-radius: 8px;
+    border: 1px dashed var(--accent2);
+    margin: 10px 0;
+    font-family: "Hiragino Sans", sans-serif;
+    color: #e0e0ff;
+  }
+  .example-label {
+    color: var(--accent2);
+    font-size: 0.85em;
+    margin-bottom: 6px;
+  }
+  .time-badge {
+    display: inline-block;
+    background: var(--gold);
+    color: #000;
+    font-weight: bold;
+    padding: 4px 14px;
+    border-radius: 20px;
+    font-size: 0.9em;
+    margin-right: 8px;
+  }
+  .final-cta {
+    background: linear-gradient(135deg, rgba(255,110,199,0.15), rgba(110,224,255,0.1));
+    border: 2px dashed var(--accent);
+    padding: 28px;
+    border-radius: 16px;
+    text-align: center;
+    margin-top: 30px;
+  }
+  .final-cta h2 { color: var(--gold); margin-bottom: 14px; }
+  footer {
+    text-align: center;
+    color: var(--muted);
+    margin-top: 30px;
+    padding: 20px;
+    font-size: 0.85em;
+  }
+  .emoji { font-size: 1.2em; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+<header>
+  <h1>Risaへ 🌸</h1>
+  <div class="subtitle">最初の「神記事」のための、大事なお願い</div>
+  <p class="lead">
+    Risaさん、おつかれさまです。<br>
+    英語圏向けNewsletter「<b style="color:var(--accent)">Risa's 200</b>」の<br>
+    <b style="color:var(--gold)">記念すべき最初の記事</b>のために、お願いしたいことがあります。
+  </p>
+</header>
+
+<div class="section">
+  <h2>📖 このプロジェクトについて(確認)</h2>
+  <p>
+    英語圏の女性アニメファンに向けて、<b>Risaさんの20年・1000本以上の経験</b>で日本のアニメの本当の価値を伝えるNewsletterを立ち上げます。
+  </p>
+  <p>
+    このNewsletterの成功の9割は、<b>最初の1本の記事</b>で決まります。これを「神記事(Hero Piece)」と呼んでいて、Risaさんの存在を世界に知ってもらう切符になります。
+  </p>
+  <div class="pink-highlight">
+    <b>最初の記事のタイトル(仮):</b><br>
+    <b style="color:var(--gold); font-size:1.1em;">"20 years. 1,000 anime. One Tokyo woman's isekai list."</b><br>
+    <span style="color:var(--muted); font-size:0.9em;">(20年間、1000本のアニメ、東京の女性1人が選ぶ異世界リスト)</span>
+  </div>
+</div>
+
+<div class="section">
+  <h2>🎯 今回のお願い(ここが一番大事)</h2>
+  <p>
+    Risaさんにしかできない作業が<b>2つ</b>あります。
+  </p>
+
+  <div class="highlight">
+    <b>①</b> <b>直近2年(2024〜2025年)の異世界アニメ 約50本</b>について、率直な感想を日本語で教えてください<br>
+    <b>②</b> その中から「これは本当に良かった!」と思える<b>ベスト5本</b>を選んでください
+  </div>
+
+  <p>
+    <b>なぜこれがRisaさんにしかできないか:</b><br>
+    AIで代筆もできますが、そうすると英語圏にいくらでもある<b>"AIが書いた量産Newsletter"</b>と同じになって、Risaさんの独自性がゼロになります。
+    <b>実際に観た人の本音</b>こそが、このNewsletterの最大の武器です。
+  </p>
+
+  <p>
+    手厳しくて全然OK。むしろ<b>「これは残念だった」</b>の言葉があるほど英語圏読者に刺さります。
+    嘘のない<b>本物の目利きの声</b>を待っています。
+  </p>
+</div>
+
+<div class="section">
+  <h2>🎤 やり方は3つから選べます(一番楽な方法でOK)</h2>
+
+  <div class="pink-highlight">
+    <b>方法A: 音声メモ(一番ラク・推奨)</b><br>
+    スマホの録音アプリで、1本ずつ話してもらうだけ。<br>
+    「◯◯◯は主人公が…で、作画が…で、まぁまぁ」みたいな、気楽な口調で全然OKです。<br>
+    → Banno さんに音声ファイル送付
+  </div>
+
+  <div class="pink-highlight">
+    <b>方法B: 箇条書きメモ</b><br>
+    LINE / メール / メモアプリに、1作品1〜3行でOK。<br>
+    例: <i>「無職転生2期 → 主人公の成長が丁寧で作画も◎。5本入り」</i>
+  </div>
+
+  <div class="pink-highlight">
+    <b>方法C: Risaさんが一番やりやすい方法</b><br>
+    上記になくても、<b>負担にならない形</b>で提供してもらうのが一番大事です。
+  </div>
+</div>
+
+<div class="section">
+  <h2>✍️ 感想の例(こんな感じでOK)</h2>
+  <p>Risaさんの自然な言葉で大丈夫ですが、イメージ用にサンプルを置いておきます。</p>
+
+  <div class="example">
+    <div class="example-label">📺 例1 (短め)</div>
+    「<b>無職転生2期</b> — 作画が本気。特に◯話の戦闘シーンが神。主人公の心理描写が丁寧で、安っぽい俺TUEEEじゃないのが良い。声優も◎。<b>5本入り候補</b>」
+  </div>
+
+  <div class="example">
+    <div class="example-label">📺 例2 (辛口)</div>
+    「<b>◯◯◯◯◯</b> — 脚本がテンプレすぎて1.5倍速で観た。主人公が無個性で共感ゼロ。作画は平均レベル。<b>選外</b>」
+  </div>
+
+  <div class="example">
+    <div class="example-label">📺 例3 (ベスト5入り)</div>
+    「<b>◯◯◯◯◯</b> — 音楽が反則的に良い。特にEDが毎話泣ける。脚本も伏線回収が丁寧で2回観た。女性ファンは絶対好き。<b>ベスト5確定</b>」
+  </div>
+
+  <p style="margin-top:14px;">
+    <b style="color:var(--accent)">ポイント:</b> Risaさんがいつも気にしている <b>作画・声優・音楽・脚本</b> の4軸に触れてもらえると、英語読者に「この人、本物のオタクだ」が伝わります。ただし全部触れる必要はありません。<b>気になった点だけ</b>で十分です。
+  </p>
+</div>
+
+<div class="section">
+  <h2>⏱️ かかる時間の目安</h2>
+  <ul>
+    <li><span class="time-badge">30分</span> 30本くらいの作品名を思い出してリストアップ</li>
+    <li><span class="time-badge">60分</span> 各作品に1〜3分の感想を録音 or 書く</li>
+    <li><span class="time-badge">15分</span> ベスト5を決めて、それぞれに詳しめの理由</li>
+  </ul>
+  <div class="highlight">
+    <b>合計: 約90〜100分</b>(1日で一気にやる必要なし、分割OK!)<br>
+    <b>期限: できれば1週間以内</b>(余裕あれば・急がなくて大丈夫です)
+  </div>
+</div>
+
+<div class="section">
+  <h2>🔄 この後の流れ(Risaさんの負担はここだけ)</h2>
+  <div class="process">
+    <div class="process-step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <span class="step-title">50本の感想を日本語で</span>
+        <span class="step-who">👉 Risa担当</span><br>
+        <span style="color:var(--muted); font-size:0.9em;">音声 or メモ (60〜90分)</span>
+      </div>
+    </div>
+    <div class="process-step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <span class="step-title">ベスト5を選ぶ + 理由</span>
+        <span class="step-who">👉 Risa担当</span><br>
+        <span style="color:var(--muted); font-size:0.9em;">(15分)</span>
+      </div>
+    </div>
+    <div class="process-step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <span class="step-title">AIが英訳・整形・構造化</span>
+        <span class="step-who">👉 Banno + AI</span><br>
+        <span style="color:var(--muted); font-size:0.9em;">Risaの声と熱量をそのまま英語に変換</span>
+      </div>
+    </div>
+    <div class="process-step">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <span class="step-title">構造整形 + イントロ/アウトロ追加</span>
+        <span class="step-who">👉 Banno + AI</span><br>
+        <span style="color:var(--muted); font-size:0.9em;">英語圏読者が読みやすい形に</span>
+      </div>
+    </div>
+    <div class="process-step">
+      <div class="step-num">5</div>
+      <div class="step-body">
+        <span class="step-title">日本語訳で最終チェック</span>
+        <span class="step-who">👉 Risa担当</span><br>
+        <span style="color:var(--muted); font-size:0.9em;">「ここ違う」だけ指摘してもらうだけ (15分)</span>
+      </div>
+    </div>
+    <div class="process-step">
+      <div class="step-num">6</div>
+      <div class="step-body">
+        <span class="step-title">Beehiivで公開</span>
+        <span class="step-who">👉 AI自動</span><br>
+        <span style="color:var(--muted); font-size:0.9em;">Newsletterとして世界へ</span>
+      </div>
+    </div>
+  </div>
+  <p style="margin-top:14px;">
+    <b>Risaさんの実働時間: 合計 約90〜100分</b>(Step 1・2・5のみ)
+  </p>
+</div>
+
+<div class="section">
+  <h2>💜 なぜこれがそんなに大事か</h2>
+  <p>
+    英語圏のアニメNewsletterはすでに無数にありますが、<b>日本在住・日本人・女性・20年筋金入り・業界出身</b>という条件を全部満たす発信者は<b>世界に一人もいません</b>。これはRisaさんだけが占有できる場所です。
+  </p>
+  <p>
+    最初の記事で「この人は本物だ」と英語圏読者に伝われば、Newsletterは半年〜1年で月数千ドル以上の収益を生む可能性があります。そして何より、Risaさんの<b>夢「日本のアニメ女性ファンと海外女性ファンを繋ぎたい」</b>の第一歩になります。
+  </p>
+  <div class="pink-highlight">
+    <b>この記事は、Risaさんの声を世界に届ける<br>
+    "はじめまして"の手紙です。</b>
+  </div>
+</div>
+
+<div class="final-cta">
+  <h2>🌸 お願いしたいこと まとめ</h2>
+  <p style="font-size:1.05em;">
+    <b>① 2024〜2025年の異世界アニメ 約50本 の率直な感想</b><br>
+    <b>② その中からベスト5本 の選定と詳しい理由</b><br>
+    <b>③ 方法は音声 or メモ、一番ラクなやり方で</b>
+  </p>
+  <p style="margin-top:18px; color:var(--muted);">
+    完成したら <b style="color:var(--accent)">Banno さんに送付</b> してください<br>
+    質問あれば遠慮なく!
+  </p>
+</div>
+
+<footer>
+  Risa's 200 · Hero Piece Brief · 2026<br>
+  Made with 💜 for Risa
+</footer>
+
+</div>
+
+</body>
+</html>
