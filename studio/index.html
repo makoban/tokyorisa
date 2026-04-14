@@ -558,7 +558,7 @@ async function saveSessionConversation() {
 // ============================================================
 // CHAT
 // ============================================================
-function startChat() {
+async function startChat() {
   const info = state.workInfo;
   const topicLabel = state.selectedSeason.name === "全シリーズ"
     ? info.title_ja
@@ -566,7 +566,15 @@ function startChat() {
   document.getElementById("chat-topic").textContent = topicLabel;
   showScreen("screen-chat");
   state.conversation = [];
-  const firstMsg = `Risaさん、こんばんは🌸 今日は『${topicLabel}』について話したいんですね!\n\n早速ですが、この作品で一番Risaさんの心に残ったシーンってどこでした? 1つだけで構いません。`;
+  // Generate opening message using briefing so AI opens with a concrete hook
+  const b = state.briefing || {};
+  const hook = b.japan_x_chatter || b.japanese_fan_perspective || b.english_x_chatter || b.english_fan_perspective || b.hot_scenes || "";
+  let firstMsg;
+  if (hook) {
+    firstMsg = `Risaさん、お待たせしました🌸 今日は『${topicLabel}』ですね。\n\nちょっと下調べしてきたんですが、${typeof hook === "string" ? hook.split(/[、。\n]/)[0].slice(0, 80) : ""}という話がファンの間で出てて、面白いなと思ったんです。\n\nRisaさん的にはこの辺、実際に観てみてどう感じました?`;
+  } else {
+    firstMsg = `Risaさん、お待たせしました🌸 今日は『${topicLabel}』について話したいんですよね!\n\n早速ですが、この作品で一番Risaさんの心に残ったシーンってどこでした?`;
+  }
   addMessage("ai", firstMsg);
 }
 
