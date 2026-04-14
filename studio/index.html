@@ -26,35 +26,104 @@
   body { display: flex; flex-direction: column; }
   .screen { display: none; flex: 1; flex-direction: column; min-height: 0; }
   .screen.active { display: flex; }
-  #screen-login { align-items: center; justify-content: center; padding: 40px 30px; text-align: center; }
-  #screen-login .logo {
-    width: 140px; height: 140px; border-radius: 50%; margin-bottom: 24px;
-    box-shadow: 0 0 40px rgba(255, 110, 199, 0.4); border: 3px solid var(--accent);
+
+  /* ========== Dashboard ========== */
+  #screen-dashboard { padding: 24px 20px; overflow-y: auto; }
+  .dash-header {
+    display: flex; align-items: center; gap: 14px;
+    margin-bottom: 24px; padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
   }
-  #screen-login h1 {
-    font-size: 1.8em;
+  .dash-header img {
+    width: 60px; height: 60px; border-radius: 50%;
+    border: 3px solid var(--accent);
+    box-shadow: 0 0 20px rgba(255,110,199,0.3);
+  }
+  .dash-header .greeting { flex: 1; }
+  .dash-header h1 {
+    font-size: 1.4em;
     background: linear-gradient(90deg, var(--accent), var(--accent2));
-    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
-    margin-bottom: 6px;
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 2px;
   }
-  #screen-login .subtitle { color: var(--muted); margin-bottom: 30px; font-size: 0.95em; }
-  #screen-login input {
-    width: 100%; max-width: 280px; padding: 16px 20px;
-    background: var(--card); border: 2px solid var(--border); border-radius: 12px;
-    color: var(--text); font-size: 1.1em; text-align: center; margin-bottom: 16px;
-    font-family: inherit;
+  .dash-header p { color: var(--muted); font-size: 0.85em; }
+
+  .new-chat-btn {
+    display: block; width: 100%;
+    padding: 22px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #000; border: none; border-radius: 16px;
+    font-size: 1.1em; font-weight: bold;
+    cursor: pointer; font-family: inherit;
+    box-shadow: 0 8px 25px rgba(255,110,199,0.3);
+    transition: transform 0.15s;
+    margin-bottom: 20px;
   }
-  #screen-login input:focus { outline: none; border-color: var(--accent); }
-  #screen-topic, #screen-confirm { padding: 30px 24px; overflow-y: auto; }
-  #screen-topic header, #screen-confirm header { display: flex; align-items: center; gap: 14px; margin-bottom: 24px; }
-  #screen-topic header img, #screen-confirm header img { width: 50px; height: 50px; border-radius: 50%; border: 2px solid var(--accent); }
-  #screen-topic header h2, #screen-confirm header h2 { font-size: 1.2em; color: var(--accent2); }
-  #screen-topic header p, #screen-confirm header p { color: var(--muted); font-size: 0.85em; }
+  .new-chat-btn:active { transform: scale(0.98); }
+
+  .history-section-title {
+    display: flex; justify-content: space-between; align-items: center;
+    margin: 8px 0 12px; color: var(--accent2); font-size: 0.95em;
+  }
+  .history-list { display: flex; flex-direction: column; gap: 10px; }
+  .history-card-wrapper { position: relative; }
+  .history-card {
+    display: block; width: 100%;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 14px 52px 14px 16px;
+    cursor: pointer; font-family: inherit;
+    text-align: left; color: var(--text);
+    transition: all 0.2s;
+  }
+  .history-card:active { background: rgba(255,110,199,0.08); border-color: var(--accent); }
+  .history-title {
+    font-weight: bold; color: var(--gold); font-size: 0.95em;
+    margin-bottom: 4px; word-break: break-word;
+  }
+  .history-meta {
+    font-size: 0.75em; color: var(--muted);
+    display: flex; justify-content: space-between; gap: 8px;
+  }
+  .history-badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 0.68em; font-weight: bold;
+  }
+  .badge-draft { background: rgba(110,224,255,0.15); color: var(--accent2); border: 1px solid var(--accent2); }
+  .badge-done { background: rgba(255,211,105,0.15); color: var(--gold); border: 1px solid var(--gold); }
+  .badge-empty { background: rgba(150,150,150,0.15); color: var(--muted); border: 1px solid var(--muted); }
+  .delete-btn {
+    position: absolute; top: 50%; right: 12px;
+    transform: translateY(-50%);
+    background: rgba(255,80,100,0.1);
+    color: #ff5060; border: 1px solid rgba(255,80,100,0.4);
+    border-radius: 50%; width: 34px; height: 34px;
+    cursor: pointer; font-size: 1em;
+  }
+  .delete-btn:active { background: rgba(255,80,100,0.25); }
+  .history-empty {
+    text-align: center; padding: 40px 20px; color: var(--muted);
+    background: rgba(0,0,0,0.2); border-radius: 12px;
+    border: 1px dashed var(--border);
+  }
+
+  /* ========== Topic Input ========== */
+  #screen-topic { padding: 24px 22px; overflow-y: auto; }
+  #screen-topic header, #screen-confirm header {
+    display: flex; align-items: center; gap: 12px; margin-bottom: 20px;
+  }
+  #screen-topic header img, #screen-confirm header img {
+    width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--accent);
+  }
+  #screen-topic header h2, #screen-confirm header h2 {
+    font-size: 1.1em; color: var(--accent2);
+  }
+  #screen-topic header p, #screen-confirm header p { color: var(--muted); font-size: 0.82em; }
   .topic-card {
     background: var(--card); border: 1px solid var(--border); border-radius: 14px;
-    padding: 22px; margin-bottom: 16px;
+    padding: 20px; margin-bottom: 14px;
   }
-  .topic-card h3 { color: var(--gold); font-size: 1em; margin-bottom: 12px; }
+  .topic-card h3 { color: var(--gold); font-size: 0.95em; margin-bottom: 12px; }
   .topic-card input {
     width: 100%; padding: 14px 16px;
     background: rgba(0,0,0,0.3); border: 2px solid var(--border); border-radius: 10px;
@@ -64,77 +133,133 @@
   .quick-suggestions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
   .chip {
     background: rgba(110, 224, 255, 0.1); border: 1px solid var(--accent2);
-    color: var(--accent2); padding: 6px 14px; border-radius: 18px;
-    font-size: 0.85em; cursor: pointer;
+    color: var(--accent2); padding: 6px 12px; border-radius: 18px;
+    font-size: 0.82em; cursor: pointer;
   }
   .chip:active { background: rgba(110, 224, 255, 0.25); }
 
-  /* Confirm screen */
+  /* ========== Confirm with image cards ========== */
+  #screen-confirm { padding: 24px 22px; overflow-y: auto; }
+  .confirm-hint {
+    background: rgba(255, 211, 105, 0.08); border-left: 3px solid var(--gold);
+    padding: 10px 14px; border-radius: 8px; margin-bottom: 16px;
+    color: var(--gold); font-size: 0.85em;
+  }
+  .candidate-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+  }
+  .candidate-card {
+    background: var(--card); border: 2px solid var(--border);
+    border-radius: 12px; overflow: hidden;
+    cursor: pointer; transition: all 0.2s;
+    display: flex; flex-direction: column;
+    padding: 0;
+  }
+  .candidate-card:active {
+    border-color: var(--accent);
+    transform: scale(0.98);
+  }
+  .candidate-card img {
+    width: 100%; aspect-ratio: 2/3; object-fit: cover;
+    display: block; background: #000;
+  }
+  .candidate-card-body { padding: 10px; }
+  .candidate-card-title {
+    color: var(--gold); font-weight: bold;
+    font-size: 0.85em; line-height: 1.3;
+    overflow: hidden; text-overflow: ellipsis;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    margin-bottom: 4px;
+  }
+  .candidate-card-meta {
+    color: var(--muted); font-size: 0.72em;
+    display: flex; gap: 6px; flex-wrap: wrap;
+  }
+
+  /* ========== Loading/Confirm shared ========== */
+  .loading-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+    padding: 40px 22px; text-align: center;
+  }
+  .loading-card p { margin-top: 14px; color: var(--muted); font-size: 0.9em; }
+  .error-box {
+    background: rgba(255, 80, 100, 0.1); border: 1px solid #ff5060;
+    padding: 14px 18px; border-radius: 10px; color: #ffb0b8;
+    font-size: 0.85em; margin-bottom: 14px; word-break: break-all;
+  }
   .confirm-card {
     background: var(--card); border: 1px solid var(--border); border-radius: 14px;
-    padding: 22px; margin-bottom: 16px;
+    padding: 20px; margin-bottom: 14px;
   }
+  .confirm-hero {
+    display: flex; gap: 14px; margin-bottom: 14px;
+  }
+  .confirm-hero img {
+    width: 100px; aspect-ratio: 2/3; object-fit: cover;
+    border-radius: 8px; flex-shrink: 0;
+    border: 2px solid var(--accent);
+  }
+  .confirm-hero-info { flex: 1; min-width: 0; }
   .confirm-title {
-    font-size: 1.3em; color: var(--gold); margin-bottom: 4px; font-weight: bold;
+    font-size: 1.15em; color: var(--gold); font-weight: bold;
+    margin-bottom: 4px; word-break: break-word;
   }
-  .confirm-en {
-    color: var(--accent2); font-size: 0.9em; margin-bottom: 14px;
-  }
-  .confirm-meta {
-    display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px;
-  }
+  .confirm-en { color: var(--accent2); font-size: 0.82em; margin-bottom: 10px; word-break: break-word; }
+  .confirm-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
   .meta-chip {
     background: rgba(255, 211, 105, 0.1); color: var(--gold);
     border: 1px solid rgba(255, 211, 105, 0.3);
-    padding: 4px 12px; border-radius: 14px; font-size: 0.8em;
+    padding: 3px 10px; border-radius: 12px; font-size: 0.72em;
   }
   .confirm-synopsis {
-    color: #e0e0e0; font-size: 0.92em; padding: 14px;
+    color: #d8d8e0; font-size: 0.88em; padding: 12px 14px;
     background: rgba(0,0,0,0.3); border-radius: 10px;
-    border-left: 3px solid var(--accent); line-height: 1.6;
+    border-left: 3px solid var(--accent); line-height: 1.55;
   }
-  .season-list {
-    display: flex; flex-direction: column; gap: 10px; margin-top: 14px;
-  }
+  .season-list { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
   .season-btn {
     background: rgba(255, 110, 199, 0.08); border: 1px solid var(--accent);
     border-radius: 12px; padding: 14px 16px; color: var(--text);
-    cursor: pointer; text-align: left; font-family: inherit; font-size: 0.95em;
-    transition: all 0.2s;
+    cursor: pointer; text-align: left; font-family: inherit; font-size: 0.92em;
   }
   .season-btn:active { background: rgba(255, 110, 199, 0.25); }
   .season-name { font-weight: bold; color: var(--accent); margin-bottom: 4px; }
-  .season-info { font-size: 0.82em; color: var(--muted); }
-  .season-brief { font-size: 0.85em; color: #d8d8d8; margin-top: 6px; line-height: 1.5; }
+  .season-info { font-size: 0.78em; color: var(--muted); }
+  .season-brief { font-size: 0.82em; color: #d8d8d8; margin-top: 6px; line-height: 1.5; }
 
+  /* ========== Chat ========== */
   .chat-header {
-    padding: 16px 18px;
+    padding: 14px 16px;
     background: rgba(0,0,0,0.4); backdrop-filter: blur(10px);
     border-bottom: 1px solid var(--border);
-    display: flex; align-items: center; gap: 12px; flex-shrink: 0;
+    display: flex; align-items: center; gap: 10px; flex-shrink: 0;
   }
-  .chat-header img { width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--accent); }
+  .chat-header .back-btn {
+    background: transparent; border: 1px solid var(--accent2);
+    color: var(--accent2); padding: 6px 10px; border-radius: 16px;
+    font-size: 0.78em; cursor: pointer; font-family: inherit;
+    flex-shrink: 0;
+  }
+  .chat-header img { width: 38px; height: 38px; border-radius: 50%; border: 2px solid var(--accent); }
   .chat-header .info { flex: 1; min-width: 0; }
-  .chat-header .info-title { font-size: 0.9em; color: var(--muted); }
+  .chat-header .info-title { font-size: 0.78em; color: var(--muted); }
   .chat-header .info-topic {
-    font-weight: bold; color: var(--gold); font-size: 1em;
+    font-weight: bold; color: var(--gold); font-size: 0.95em;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
   .chat-header .end-btn {
     background: var(--accent); color: #000; border: none;
-    padding: 8px 14px; border-radius: 20px; font-size: 0.85em;
+    padding: 8px 12px; border-radius: 18px; font-size: 0.8em;
     font-weight: bold; cursor: pointer; flex-shrink: 0; font-family: inherit;
   }
-  .chat-messages {
-    flex: 1; overflow-y: auto; padding: 20px 16px; -webkit-overflow-scrolling: touch;
-  }
+  .chat-messages { flex: 1; overflow-y: auto; padding: 20px 16px; -webkit-overflow-scrolling: touch; }
   .msg { margin-bottom: 14px; max-width: 85%; animation: slideIn 0.3s ease-out; }
   @keyframes slideIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
   .msg-ai { margin-right: auto; }
   .msg-risa { margin-left: auto; }
   .msg-bubble {
     padding: 12px 16px; border-radius: 18px;
-    line-height: 1.55; font-size: 1em; word-wrap: break-word;
+    line-height: 1.55; font-size: 0.98em; word-wrap: break-word;
   }
   .msg-ai .msg-bubble {
     background: rgba(110, 224, 255, 0.13); border: 1px solid var(--ai);
@@ -169,45 +294,53 @@
     background: linear-gradient(135deg, var(--accent), var(--accent2));
     color: #000; border: none; font-size: 1.4em; cursor: pointer;
     flex-shrink: 0; display: flex; align-items: center; justify-content: center;
-    transition: transform 0.15s;
   }
   .send-btn:active { transform: scale(0.92); }
   .send-btn:disabled { opacity: 0.4; }
+  .footer-tip {
+    text-align: center; color: var(--muted); font-size: 0.72em;
+    padding: 8px 16px; background: rgba(0,0,0,0.3); flex-shrink: 0;
+  }
+
+  /* ========== Article ========== */
   #screen-article { overflow-y: auto; padding: 24px 22px; }
   #screen-article .article-header {
     display: flex; align-items: center; gap: 12px;
-    margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--border);
+    margin-bottom: 18px; padding-bottom: 14px; border-bottom: 1px solid var(--border);
   }
   #screen-article .article-header img { width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--accent); }
-  #screen-article .article-header h2 { color: var(--gold); font-size: 1.1em; }
+  #screen-article .article-header h2 { color: var(--gold); font-size: 1.05em; }
   #article-content {
-    background: var(--card); padding: 22px; border-radius: 14px;
-    border: 1px solid var(--border); font-size: 0.95em; line-height: 1.75;
-    color: #f0f0f0; margin-bottom: 16px; white-space: pre-wrap;
-    max-height: 50vh; overflow-y: auto;
+    background: var(--card); padding: 20px; border-radius: 14px;
+    border: 1px solid var(--border); font-size: 0.92em; line-height: 1.7;
+    color: #f0f0f0; margin-bottom: 14px; white-space: pre-wrap;
+    max-height: 45vh; overflow-y: auto;
   }
   .quote-box {
     background: rgba(255, 211, 105, 0.08); border: 1px dashed var(--gold);
-    padding: 16px 20px; border-radius: 12px; margin: 16px 0;
+    padding: 16px 18px; border-radius: 12px; margin: 14px 0;
   }
-  .quote-box-label { color: var(--gold); font-size: 0.85em; font-weight: bold; margin-bottom: 10px; }
+  .quote-box-label { color: var(--gold); font-size: 0.82em; font-weight: bold; margin-bottom: 10px; }
   .quote-box ul { padding-left: 20px; }
   .quote-box li { margin-bottom: 6px; color: #fff5dc; }
-  .article-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
+  .article-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
+
+  /* ========== Buttons ========== */
   .btn {
-    width: 100%; padding: 16px;
+    width: 100%; padding: 14px;
     background: linear-gradient(90deg, var(--accent), var(--accent2));
     color: #000; border: none; border-radius: 12px;
-    font-size: 1.05em; font-weight: bold; cursor: pointer;
-    font-family: inherit; transition: transform 0.15s;
+    font-size: 1em; font-weight: bold; cursor: pointer;
+    font-family: inherit;
   }
   .btn:active { transform: scale(0.98); }
   .btn-secondary { background: transparent; color: var(--accent2); border: 2px solid var(--accent2); }
   .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+
   .toast {
     position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
     background: rgba(0,0,0,0.9); color: var(--gold);
-    padding: 12px 22px; border-radius: 24px; font-size: 0.9em;
+    padding: 12px 22px; border-radius: 24px; font-size: 0.88em;
     z-index: 200; border: 1px solid var(--gold);
     opacity: 0; transition: opacity 0.3s; pointer-events: none;
     max-width: 90%; text-align: center;
@@ -219,122 +352,81 @@
     border-radius: 50%; animation: spin 0.8s linear infinite;
   }
   @keyframes spin { to { transform: rotate(360deg); } }
-  .footer-tip {
-    text-align: center; color: var(--muted); font-size: 0.75em;
-    padding: 10px 16px; background: rgba(0,0,0,0.3); flex-shrink: 0;
-  }
-  .history-list { display: flex; flex-direction: column; gap: 12px; margin-top: 10px; }
-  .history-card {
-    background: var(--card); border: 1px solid var(--border);
-    border-radius: 12px; padding: 16px; cursor: pointer;
-    transition: all 0.2s; font-family: inherit;
-    text-align: left; color: var(--text);
-  }
-  .history-card:active { background: rgba(255,110,199,0.08); border-color: var(--accent); }
-  .history-title {
-    font-weight: bold; color: var(--gold); font-size: 1em;
-    margin-bottom: 4px; word-break: break-word;
-  }
-  .history-meta {
-    font-size: 0.8em; color: var(--muted);
-    display: flex; justify-content: space-between; gap: 8px; margin-top: 6px;
-  }
-  .history-badge {
-    display: inline-block; padding: 2px 10px; border-radius: 12px;
-    font-size: 0.72em; font-weight: bold;
-  }
-  .badge-draft { background: rgba(110,224,255,0.15); color: var(--accent2); border: 1px solid var(--accent2); }
-  .badge-done { background: rgba(255,211,105,0.15); color: var(--gold); border: 1px solid var(--gold); }
-  .badge-empty { background: rgba(150,150,150,0.15); color: var(--muted); border: 1px solid var(--muted); }
-  .history-empty {
-    text-align: center; padding: 50px 20px; color: var(--muted);
-  }
-  .loading-card {
-    background: var(--card); border: 1px solid var(--border); border-radius: 14px;
-    padding: 40px 22px; text-align: center;
-  }
-  .loading-card p { margin-top: 14px; color: var(--muted); font-size: 0.9em; }
-  .error-box {
-    background: rgba(255, 80, 100, 0.1); border: 1px solid #ff5060;
-    padding: 14px 18px; border-radius: 10px; color: #ffb0b8;
-    font-size: 0.85em; margin-bottom: 14px; word-break: break-all;
-  }
 </style>
 </head>
 <body>
 
-<section id="screen-login" class="screen active">
-  <img src="../assets/risa-icon.jpeg" alt="Risa" class="logo">
-  <h1>Risa's Studio</h1>
-  <p class="subtitle">あなた専用のスタジオ 🌸</p>
-  <input id="password" type="password" placeholder="パスワード" autocomplete="off">
-  <button id="login-btn" class="btn" style="max-width:280px;">入る</button>
+<!-- ========== DASHBOARD (default) ========== -->
+<section id="screen-dashboard" class="screen active">
+  <div class="dash-header">
+    <img src="../assets/risa-icon.jpeg" alt="Risa">
+    <div class="greeting">
+      <h1>Risa's Studio 🌸</h1>
+      <p id="greeting-text">こんにちは Risaさん</p>
+    </div>
+  </div>
+
+  <button class="new-chat-btn" onclick="goToNewChat()">
+    ✨ 新しい会話を始める
+  </button>
+
+  <div class="history-section-title">
+    <span>📚 過去の会話</span>
+    <span id="history-count" style="color:var(--muted); font-size:0.75em;"></span>
+  </div>
+
+  <div id="dashboard-loading" class="loading-card" style="display:none;"><div class="loader"></div><p>読み込み中...</p></div>
+  <div id="dashboard-history" class="history-list"></div>
 </section>
 
+<!-- ========== TOPIC INPUT ========== -->
 <section id="screen-topic" class="screen">
   <header>
     <img src="../assets/risa-icon.jpeg" alt="Risa">
-    <div class="greeting">
-      <h2>こんにちは Risaさん 🌸</h2>
-      <p>今日はどの作品の話をしますか?</p>
+    <div>
+      <h2>どの作品の話をしますか? 🎬</h2>
+      <p>作品名を入力するか、候補から選んでください</p>
     </div>
   </header>
   <div class="topic-card">
     <h3>📺 作品名を入力</h3>
-    <input id="topic-input" type="text" placeholder="例: 葬送のフリーレン、リゼロ..." autocomplete="off">
+    <input id="topic-input" type="text" placeholder="例: frieren, リゼロ, 無職転生..." autocomplete="off">
     <div class="quick-suggestions">
-      <span class="chip" onclick="setTopic('葬送のフリーレン')">葬送のフリーレン</span>
-      <span class="chip" onclick="setTopic('無職転生')">無職転生</span>
-      <span class="chip" onclick="setTopic('リゼロ')">リゼロ</span>
-      <span class="chip" onclick="setTopic('魔法少女まどか☆マギカ')">まどマギ</span>
-      <span class="chip" onclick="setTopic('転スラ')">転スラ</span>
+      <span class="chip" onclick="setTopic('frieren')">フリーレン</span>
+      <span class="chip" onclick="setTopic('mushoku tensei')">無職転生</span>
+      <span class="chip" onclick="setTopic('re zero')">リゼロ</span>
+      <span class="chip" onclick="setTopic('madoka magica')">まどマギ</span>
+      <span class="chip" onclick="setTopic('konosuba')">このすば</span>
     </div>
   </div>
   <button id="start-btn" class="btn">この作品を探す 🔍</button>
-  <div style="height:10px;"></div>
-  <button class="btn btn-secondary" onclick="showHistory()">📚 過去の会話を見る</button>
-  <div style="height:10px;"></div>
-  <button class="btn btn-ghost" onclick="logout()">ログアウト</button>
+  <div style="height:12px;"></div>
+  <button class="btn btn-ghost" onclick="showScreen('screen-dashboard')">↩️ ダッシュボードに戻る</button>
 </section>
 
-<section id="screen-history" class="screen" style="padding: 30px 24px; overflow-y: auto;">
-  <header>
-    <img src="../assets/risa-icon.jpeg" alt="Risa" style="width:50px; height:50px; border-radius:50%; border:2px solid var(--accent); margin-right:14px;">
-    <div style="flex:1;">
-      <h2 style="font-size:1.2em; color:var(--accent2);">📚 過去の会話</h2>
-      <p style="color:var(--muted); font-size:0.85em;">タップして続きから話せます</p>
-    </div>
-  </header>
-  <div id="history-loading" class="loading-card"><div class="loader"></div><p>読み込み中...</p></div>
-  <div id="history-container" class="history-list" style="display:none;"></div>
-  <div style="height:16px;"></div>
-  <button class="btn btn-ghost" onclick="goToTopic()">↩️ 新しい会話に戻る</button>
-</section>
-
+<!-- ========== CONFIRM (image candidates) ========== -->
 <section id="screen-confirm" class="screen">
   <header>
     <img src="../assets/risa-icon.jpeg" alt="Risa">
-    <div class="greeting">
-      <h2>この作品で合ってますか? 🎬</h2>
-      <p>見つかった作品情報です</p>
+    <div>
+      <h2 id="confirm-header-title">この作品で合ってますか? 🎬</h2>
+      <p id="confirm-header-sub">見つかった候補から選んでください</p>
     </div>
   </header>
-  <div id="confirm-loading" class="loading-card">
-    <div class="loader"></div>
-    <p>AIが作品を調べています...</p>
-  </div>
+  <div id="confirm-loading" class="loading-card"><div class="loader"></div><p>検索中...</p></div>
   <div id="confirm-result" style="display:none;">
     <div id="confirm-error" class="error-box" style="display:none;"></div>
-    <div id="confirm-card-container"></div>
+    <div id="confirm-container"></div>
     <div style="margin-top:16px;">
-      <button class="btn btn-ghost" onclick="goToTopic()">↩️ 違う作品だった、戻る</button>
+      <button class="btn btn-ghost" onclick="showScreen('screen-topic')">↩️ 検索に戻る</button>
     </div>
   </div>
 </section>
 
+<!-- ========== CHAT ========== -->
 <section id="screen-chat" class="screen">
   <header class="chat-header">
-    <button class="end-btn" onclick="goToTopic()" style="background:transparent; color:var(--accent2); border:1px solid var(--accent2); padding:6px 10px;">← 戻る</button>
+    <button class="back-btn" onclick="showScreen('screen-dashboard')">← ダッシュボード</button>
     <img src="../assets/risa-icon.jpeg" alt="Risa">
     <div class="info">
       <div class="info-title">話し中</div>
@@ -347,21 +439,19 @@
     <textarea id="chat-input" placeholder="メッセージを入力..." rows="1"></textarea>
     <button class="send-btn" id="send-btn">▶</button>
   </div>
-  <div class="footer-tip">疲れたら「記事化」を押して終了 🌸</div>
+  <div class="footer-tip">疲れたら「記事化」で終了 🌸 / 「← ダッシュボード」で保存して戻る</div>
 </section>
 
+<!-- ========== ARTICLE ========== -->
 <section id="screen-article" class="screen">
   <div class="article-header">
     <img src="../assets/risa-icon.jpeg" alt="Risa">
     <div>
       <h2>記事ドラフト完成 ✨</h2>
-      <p style="color:var(--muted); font-size:0.85em;">英語Newsletter記事</p>
+      <p style="color:var(--muted); font-size:0.8em;">Newsletter記事</p>
     </div>
   </div>
-  <div id="article-loading" class="loading-card">
-    <div class="loader"></div>
-    <p>記事を生成しています...</p>
-  </div>
+  <div id="article-loading" class="loading-card"><div class="loader"></div><p>記事を生成しています...</p></div>
   <div id="article-result" style="display:none;">
     <div id="article-error" class="error-box" style="display:none;"></div>
     <div id="lang-tabs" style="display:flex; gap:8px; margin-bottom:12px;">
@@ -369,8 +459,8 @@
       <button class="btn btn-ghost" id="tab-en" onclick="switchLang('en')" style="padding:10px;">🇺🇸 English</button>
     </div>
     <div id="article-content"></div>
-    <div id="ratings-box" style="display:none; background:rgba(110,224,255,0.08); border:1px dashed var(--accent2); padding:16px; border-radius:12px; margin:16px 0;">
-      <div style="color:var(--accent2); font-size:0.85em; font-weight:bold; margin-bottom:10px;">📊 評価サマリー</div>
+    <div id="ratings-box" style="display:none; background:rgba(110,224,255,0.08); border:1px dashed var(--accent2); padding:16px; border-radius:12px; margin:14px 0;">
+      <div style="color:var(--accent2); font-size:0.82em; font-weight:bold; margin-bottom:10px;">📊 評価サマリー</div>
       <div id="ratings-list"></div>
     </div>
     <div id="quotes-box" class="quote-box" style="display:none;">
@@ -380,7 +470,7 @@
     <div class="article-actions">
       <button class="btn" id="send-banno-btn">📮 Bannoに送る</button>
       <button class="btn btn-secondary" id="copy-btn">📋 テキストをコピー</button>
-      <button class="btn btn-ghost" onclick="goToTopic()">↻ 別の作品で話す</button>
+      <button class="btn btn-ghost" onclick="showScreen('screen-dashboard')">🏠 ダッシュボードへ</button>
     </div>
   </div>
 </section>
@@ -388,51 +478,111 @@
 <div id="toast" class="toast"></div>
 
 <script>
-const PASSWORD = "risa2026";
 const API_BASE = "https://risa-studio-api.ai-fudosan.workers.dev";
 
 const state = {
   topic: null,
-  workInfo: null,  // { title, english_title, studio, year, seasons: [...] }
+  workInfo: null,
   selectedSeason: null,
-  briefing: null,  // research brief from /api/research
-  sessionId: null, // Supabase session UUID
+  briefing: null,
+  sessionId: null,
   conversation: [],
-  isGenerating: false
+  candidates: [],
+  isGenerating: false,
+  isResuming: false,
 };
 
 function showScreen(id) {
   document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
   document.getElementById(id).classList.add("active");
+  if (id === "screen-dashboard") loadDashboard();
 }
-function goToTopic() {
+
+function resetState() {
   state.topic = null; state.workInfo = null; state.selectedSeason = null;
   state.briefing = null; state.sessionId = null;
-  state.conversation = [];
+  state.conversation = []; state.candidates = [];
+}
+
+function goToNewChat() {
+  resetState();
   document.getElementById("topic-input").value = "";
-  document.getElementById("messages").innerHTML = "";
   showScreen("screen-topic");
 }
-function logout() {
-  sessionStorage.removeItem("risa-auth");
-  goToTopic();
-  showScreen("screen-login");
-  document.getElementById("password").value = "";
-}
 
-document.getElementById("login-btn").onclick = doLogin;
-document.getElementById("password").addEventListener("keydown", e => { if (e.key === "Enter") doLogin(); });
-function doLogin() {
-  const pw = document.getElementById("password").value;
-  if (pw === PASSWORD) {
-    sessionStorage.setItem("risa-auth", "1");
-    showScreen("screen-topic");
-  } else {
-    showToast("パスワードが違います");
+// ============================================================
+// DASHBOARD
+// ============================================================
+async function loadDashboard() {
+  document.getElementById("dashboard-loading").style.display = "block";
+  document.getElementById("dashboard-history").innerHTML = "";
+  try {
+    const res = await fetch(`${API_BASE}/api/session/list`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({})
+    });
+    const data = await res.json();
+    renderDashboardHistory(data.sessions || []);
+  } catch (e) {
+    document.getElementById("dashboard-history").innerHTML = `<div class="history-empty">読み込みエラー: ${escapeHtml(e.message)}</div>`;
+  } finally {
+    document.getElementById("dashboard-loading").style.display = "none";
   }
 }
-if (sessionStorage.getItem("risa-auth") === "1") showScreen("screen-topic");
 
+function renderDashboardHistory(sessions) {
+  const container = document.getElementById("dashboard-history");
+  document.getElementById("history-count").textContent = sessions.length ? `${sessions.length}件` : "";
+  if (!sessions.length) {
+    container.innerHTML = `<div class="history-empty">まだ会話履歴がありません 🌸<br>上の「新しい会話を始める」から開始してください</div>`;
+    return;
+  }
+  container.innerHTML = sessions.map(s => {
+    const info = s.work_info || {};
+    const title = info.title_ja || s.topic || "無題";
+    const season = s.season?.name ? ` (${s.season.name})` : "";
+    const dateStr = formatJST(s.updated_at || s.created_at);
+    let badge, badgeClass;
+    if (s.article) { badge = "記事化済"; badgeClass = "badge-done"; }
+    else if (Array.isArray(s.conversation) && s.conversation.length > 0) { badge = `${s.conversation.length}往復`; badgeClass = "badge-draft"; }
+    else { badge = "未開始"; badgeClass = "badge-empty"; }
+    const safeTitle = escapeHtml(title).replace(/'/g, "&#39;");
+    return `
+      <div class="history-card-wrapper">
+        <button class="history-card" onclick="resumeSession('${s.id}')">
+          <div class="history-title">${escapeHtml(title)}${escapeHtml(season)}</div>
+          <div class="history-meta">
+            <span>🕐 ${dateStr}</span>
+            <span class="history-badge ${badgeClass}">${badge}</span>
+          </div>
+        </button>
+        <button class="delete-btn" onclick="event.stopPropagation(); deleteSession('${s.id}', '${safeTitle}')" title="削除">🗑</button>
+      </div>
+    `;
+  }).join("");
+}
+
+async function deleteSession(id, title) {
+  if (!confirm(`「${title}」の会話を削除しますか?\nこの操作は取り消せません。`)) return;
+  try {
+    const res = await fetch(`${API_BASE}/api/session/delete`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id })
+    });
+    const data = await res.json();
+    if (data.error) { showToast("削除エラー: " + data.error); return; }
+    showToast("🗑️ 削除しました");
+    loadDashboard();
+  } catch (e) {
+    showToast("削除失敗: " + e.message);
+  }
+}
+
+// ============================================================
+// TOPIC INPUT
+// ============================================================
 function setTopic(t) { document.getElementById("topic-input").value = t; }
 
 document.getElementById("start-btn").onclick = async () => {
@@ -444,9 +594,23 @@ document.getElementById("start-btn").onclick = async () => {
   document.getElementById("confirm-result").style.display = "none";
   document.getElementById("confirm-error").style.display = "none";
   try {
-    const workInfo = await identifyWork(topic);
-    state.workInfo = workInfo;
-    renderConfirmScreen(workInfo);
+    const res = await fetch(`${API_BASE}/api/identify`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title: topic })
+    });
+    const data = await res.json();
+    state.candidates = data.candidates || [];
+    const gemini = data.gemini_info || {};
+    if (state.candidates.length > 0) {
+      renderCandidateGrid(state.candidates, gemini);
+    } else if (gemini.found) {
+      // No images but Gemini gave info — use text-only confirm
+      state.workInfo = gemini;
+      renderTextOnlyConfirm(gemini);
+    } else {
+      throw new Error("作品が見つかりませんでした");
+    }
     document.getElementById("confirm-loading").style.display = "none";
     document.getElementById("confirm-result").style.display = "block";
   } catch (e) {
@@ -454,31 +618,39 @@ document.getElementById("start-btn").onclick = async () => {
     document.getElementById("confirm-result").style.display = "block";
     const errEl = document.getElementById("confirm-error");
     errEl.style.display = "block";
-    errEl.textContent = "エラー: " + (e.message || "AI接続失敗") + " / モデル: " + GEMINI_MODELS[currentModelIndex];
-    document.getElementById("confirm-card-container").innerHTML = "";
-    console.error("identifyWork failed:", e);
+    errEl.textContent = "エラー: " + (e.message || "不明");
+    document.getElementById("confirm-container").innerHTML = "";
   }
 };
 
-// ============================================================
-// IDENTIFY WORK - Calls Worker /api/identify
-// ============================================================
-async function identifyWork(userInput) {
-  const res = await fetch(`${API_BASE}/api/identify`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ title: userInput })
-  });
-  const data = await res.json();
-  if (data.error) throw new Error(data.error);
-  return data;
+function renderCandidateGrid(candidates, gemini) {
+  document.getElementById("confirm-header-title").textContent = "どの作品ですか? 🎬";
+  document.getElementById("confirm-header-sub").textContent = "タップして選んでください";
+  const container = document.getElementById("confirm-container");
+  const gridHtml = `
+    <div class="confirm-hint">💡 画像を見て、あなたが話したい作品をタップしてください</div>
+    <div class="candidate-grid">
+      ${candidates.map((c, i) => `
+        <button class="candidate-card" onclick="selectCandidate(${i})">
+          ${c.image_url ? `<img src="${escapeHtml(c.image_url)}" alt="${escapeHtml(c.title)}" loading="lazy">` : '<div style="aspect-ratio:2/3; background:var(--bg2); display:flex; align-items:center; justify-content:center; color:var(--muted);">🖼️</div>'}
+          <div class="candidate-card-body">
+            <div class="candidate-card-title">${escapeHtml(c.title_japanese || c.title)}</div>
+            <div class="candidate-card-meta">
+              ${c.year ? `<span>${c.year}</span>` : ""}
+              ${c.episodes ? `<span>${c.episodes}話</span>` : ""}
+              ${c.score ? `<span>⭐${c.score}</span>` : ""}
+            </div>
+          </div>
+        </button>
+      `).join("")}
+    </div>
+  `;
+  container.innerHTML = gridHtml;
 }
 
-// ============================================================
-// RENDER CONFIRM SCREEN
-// ============================================================
-function renderConfirmScreen(info) {
-  const container = document.getElementById("confirm-card-container");
+function renderTextOnlyConfirm(info) {
+  document.getElementById("confirm-header-title").textContent = "この作品で合ってますか? 🎬";
+  const container = document.getElementById("confirm-container");
   let html = `
     <div class="confirm-card">
       <div class="confirm-title">🎬 ${escapeHtml(info.title_ja || state.topic)}</div>
@@ -492,55 +664,69 @@ function renderConfirmScreen(info) {
     </div>
     <div class="topic-card">
       <h3>📺 どのシリーズを話しますか?</h3>
-      <div class="season-list">
+      <div class="season-list" id="season-list"></div>
+    </div>
   `;
-  const seasons = info.seasons || [{name: "全シリーズ", year: info.year, episodes: "", brief: "作品全体の話をする"}];
-  seasons.forEach((s, idx) => {
-    html += `
-      <button class="season-btn" onclick="selectSeason(${idx})">
-        <div class="season-name">${escapeHtml(s.name)}</div>
-        <div class="season-info">${escapeHtml(s.year || "")}${s.episodes ? " · " + escapeHtml(s.episodes) : ""}</div>
-        ${s.brief ? `<div class="season-brief">${escapeHtml(s.brief)}</div>` : ""}
-      </button>
-    `;
-  });
-  if (seasons.length > 1) {
-    html += `
-      <button class="season-btn" onclick="selectSeason(-1)" style="border-color:var(--gold); background:rgba(255,211,105,0.08);">
-        <div class="season-name" style="color:var(--gold);">🌐 シリーズ全体について話す</div>
-        <div class="season-info">全シーズンをまとめて語る</div>
-      </button>
-    `;
-  }
-  html += `</div></div>`;
   container.innerHTML = html;
+  renderSeasonList(info.seasons || [{name:"全シリーズ", year:info.year, episodes:"", brief:"作品全体"}]);
+}
+
+function renderSeasonList(seasons) {
+  const list = document.getElementById("season-list");
+  if (!list) return;
+  list.innerHTML = seasons.map((s, idx) => `
+    <button class="season-btn" onclick="selectSeason(${idx})">
+      <div class="season-name">${escapeHtml(s.name)}</div>
+      <div class="season-info">${escapeHtml(s.year || "")}${s.episodes ? " · " + escapeHtml(s.episodes) : ""}</div>
+      ${s.brief ? `<div class="season-brief">${escapeHtml(s.brief)}</div>` : ""}
+    </button>
+  `).join("") + (seasons.length > 1 ? `
+    <button class="season-btn" onclick="selectSeason(-1)" style="border-color:var(--gold); background:rgba(255,211,105,0.08);">
+      <div class="season-name" style="color:var(--gold);">🌐 シリーズ全体について話す</div>
+    </button>
+  ` : "");
+}
+
+async function selectCandidate(idx) {
+  const cand = state.candidates[idx];
+  if (!cand) return;
+  // Build workInfo from the chosen candidate
+  state.workInfo = {
+    title_ja: cand.title_japanese || cand.title,
+    title_en: cand.title_english || cand.title,
+    studio: cand.studios || "",
+    year: cand.year || (cand.aired_from ? cand.aired_from.slice(0,4) : ""),
+    genre: (cand.genres || []).join(", "),
+    synopsis: cand.synopsis || "",
+    image_url: cand.image_url,
+    mal_id: cand.mal_id,
+    anilist_id: cand.anilist_id,
+    seasons: [{
+      name: cand.title_english || cand.title,
+      year: cand.year || "",
+      episodes: cand.episodes ? `${cand.episodes}話` : "",
+      brief: ""
+    }],
+  };
+  // Directly use this single "season" and proceed
+  state.selectedSeason = state.workInfo.seasons[0];
+  // Proceed: research + session create + chat
+  proceedToChat();
 }
 
 async function selectSeason(idx) {
   const seasons = state.workInfo.seasons || [];
-  if (idx === -1) {
-    state.selectedSeason = { name: "全シリーズ", brief: "全シーズン" };
-  } else {
-    state.selectedSeason = seasons[idx];
-  }
-  // Show research loading screen, wait for completion
-  showResearchLoading();
-  await runResearchAndWait();
-  // Create Supabase session
-  await createSession();
-  // Now start chat
-  startChat();
+  state.selectedSeason = idx === -1 ? { name: "全シリーズ" } : seasons[idx];
+  proceedToChat();
 }
 
-function showResearchLoading() {
-  const container = document.getElementById("confirm-card-container");
-  container.innerHTML = `
-    <div class="loading-card">
-      <div class="loader"></div>
-      <p style="margin-top:16px; color:var(--accent2); font-weight:bold;">Alexが下調べ中...</p>
-      <p id="research-status" style="margin-top:8px; color:var(--muted); font-size:0.85em;">複数のソースを並列で調査しています</p>
-    </div>
-  `;
+async function proceedToChat() {
+  showScreen("screen-confirm");
+  const container = document.getElementById("confirm-container");
+  container.innerHTML = `<div class="loading-card"><div class="loader"></div><p style="margin-top:14px; color:var(--accent2); font-weight:bold;">Alexが下調べ中...</p><p id="research-status" style="color:var(--muted); font-size:0.8em;">複数ソースを並列で調査中</p></div>`;
+  await runResearchAndWait();
+  await createSession();
+  startChat();
 }
 
 async function runResearchAndWait() {
@@ -551,24 +737,9 @@ async function runResearchAndWait() {
       body: JSON.stringify({ workInfo: state.workInfo })
     });
     const data = await res.json();
-    if (data.error) {
-      console.warn("research failed:", data.error);
-      state.briefing = null;
-      return;
-    }
+    if (data.error) { state.briefing = null; return; }
     state.briefing = data.briefing;
-    const sources = Object.entries(data.sources || {})
-      .filter(([k, v]) => v)
-      .map(([k]) => {
-        const map = { wikipedia_ja: "Wiki日", wikipedia_en: "Wiki英", jikan: "MAL", anilist: "AniList", reddit: "Reddit", grok: "Grok(X)" };
-        return map[k] || k;
-      })
-      .join(" · ");
-    const statusEl = document.getElementById("research-status");
-    if (statusEl) statusEl.textContent = `✅ 下調べ完了: ${sources}`;
-  } catch (e) {
-    console.warn("research error:", e);
-  }
+  } catch (e) { console.warn("research error:", e); }
 }
 
 async function createSession() {
@@ -585,9 +756,7 @@ async function createSession() {
     });
     const data = await res.json();
     if (data.session) state.sessionId = data.session.id;
-  } catch (e) {
-    console.warn("session create failed:", e);
-  }
+  } catch (e) { console.warn("session create failed:", e); }
 }
 
 async function saveSessionConversation() {
@@ -596,104 +765,9 @@ async function saveSessionConversation() {
     await fetch(`${API_BASE}/api/session/update`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        id: state.sessionId,
-        conversation: state.conversation
-      })
+      body: JSON.stringify({ id: state.sessionId, conversation: state.conversation })
     });
-  } catch (e) {
-    console.warn("session save failed:", e);
-  }
-}
-
-// ============================================================
-// HISTORY SCREEN
-// ============================================================
-function formatJST(isoString) {
-  if (!isoString) return "";
-  try {
-    const d = new Date(isoString);
-    return d.toLocaleString("ja-JP", {
-      timeZone: "Asia/Tokyo",
-      year: "numeric", month: "numeric", day: "numeric",
-      hour: "2-digit", minute: "2-digit"
-    });
-  } catch (e) {
-    return isoString;
-  }
-}
-
-async function showHistory() {
-  showScreen("screen-history");
-  document.getElementById("history-loading").style.display = "block";
-  document.getElementById("history-container").style.display = "none";
-  try {
-    const res = await fetch(`${API_BASE}/api/session/list`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({})
-    });
-    const data = await res.json();
-    renderHistory(data.sessions || []);
-  } catch (e) {
-    console.error("history load failed:", e);
-    document.getElementById("history-container").innerHTML = `<div class="history-empty">読み込みエラー: ${e.message}</div>`;
-    document.getElementById("history-container").style.display = "block";
-  } finally {
-    document.getElementById("history-loading").style.display = "none";
-  }
-}
-
-function renderHistory(sessions) {
-  const container = document.getElementById("history-container");
-  container.style.display = "block";
-  if (!sessions.length) {
-    container.innerHTML = `<div class="history-empty">まだ会話履歴がありません 🌸<br><br>新しい作品について話してみましょう</div>`;
-    return;
-  }
-  container.innerHTML = sessions.map(s => {
-    const info = s.work_info || {};
-    const title = info.title_ja || s.topic || "無題";
-    const season = s.season?.name ? ` (${s.season.name})` : "";
-    const dateStr = formatJST(s.updated_at || s.created_at);
-    let badge, badgeClass;
-    if (s.article) { badge = "記事化済"; badgeClass = "badge-done"; }
-    else if (s.conversation?.length || (Array.isArray(s.conversation) && s.conversation.length > 0)) { badge = "会話中"; badgeClass = "badge-draft"; }
-    else { badge = "未開始"; badgeClass = "badge-empty"; }
-    return `
-      <div class="history-card-wrapper" style="position:relative;">
-        <button class="history-card" onclick="resumeSession('${s.id}')" style="width:100%; padding-right:50px;">
-          <div class="history-title">${escapeHtml(title)}${escapeHtml(season)}</div>
-          <div class="history-meta">
-            <span>🕐 ${dateStr} (JST)</span>
-            <span class="history-badge ${badgeClass}">${badge}</span>
-          </div>
-        </button>
-        <button onclick="event.stopPropagation(); deleteSession('${s.id}', '${escapeHtml(title).replace(/'/g, "\\'")}')" style="position:absolute; top:50%; right:14px; transform:translateY(-50%); background:rgba(255,80,100,0.15); color:#ff5060; border:1px solid #ff5060; border-radius:50%; width:32px; height:32px; cursor:pointer; font-size:1em;">🗑</button>
-      </div>
-    `;
-  }).join("");
-}
-
-async function deleteSession(id, title) {
-  if (!confirm(`「${title}」の会話を削除しますか?\nこの操作は取り消せません。`)) return;
-  try {
-    const res = await fetch(`${API_BASE}/api/session/delete`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id })
-    });
-    const data = await res.json();
-    if (data.error) {
-      showToast("削除エラー: " + data.error);
-      return;
-    }
-    showToast("🗑️ 削除しました");
-    // Reload history
-    showHistory();
-  } catch (e) {
-    showToast("削除失敗: " + e.message);
-  }
+  } catch (e) { console.warn("session save failed:", e); }
 }
 
 async function resumeSession(id) {
@@ -705,10 +779,7 @@ async function resumeSession(id) {
       body: JSON.stringify({ id })
     });
     const data = await res.json();
-    if (data.error || !data.session) {
-      showToast("セッションが見つかりません");
-      return;
-    }
+    if (data.error || !data.session) { showToast("セッションが見つかりません"); return; }
     const s = data.session;
     state.sessionId = s.id;
     state.topic = s.topic;
@@ -717,16 +788,9 @@ async function resumeSession(id) {
     state.briefing = s.briefing;
     state.conversation = Array.isArray(s.conversation) ? s.conversation : [];
     state.isResuming = true;
-    if (s.conversation?.length) {
-      startChat();
-      showToast(`📖 ${s.conversation.length}件のメッセージを復元`);
-    } else {
-      startChat();
-    }
-  } catch (e) {
-    console.error("resume failed:", e);
-    showToast("読み込みエラー: " + e.message);
-  }
+    startChat();
+    if (s.conversation?.length) showToast(`📖 ${s.conversation.length}件のメッセージを復元`);
+  } catch (e) { showToast("読み込みエラー: " + e.message); }
 }
 
 // ============================================================
@@ -736,30 +800,18 @@ function isValidHook(s) {
   if (!s || typeof s !== "string") return false;
   const lower = s.trim();
   if (lower.length < 10) return false;
-  const badPatterns = [
-    "情報なし", "特になし", "抽出できません", "提供されたデータ",
-    "データから", "情報がありません", "不明", "n/a", "N/A"
-  ];
+  const badPatterns = ["情報なし", "特になし", "抽出できません", "提供されたデータ", "データから", "情報がありません", "不明", "n/a", "N/A"];
   return !badPatterns.some(p => lower.includes(p));
 }
 
 function extractGoodHook(b) {
   if (!b) return null;
-  // Try all possible sources for a concrete hook
   const candidates = [
-    b.x_data?.japan_x_chatter,
-    b.x_data?.hot_scenes,
-    b.x_data?.english_x_chatter,
-    b.x_data?.japanese_unique_angles,
-    b.japanese_fan_perspective,
-    b.english_fan_perspective,
-    b.overlooked_angles,
-    b.key_staff,
-    b.overview
+    b.x_data?.japan_x_chatter, b.x_data?.hot_scenes, b.x_data?.english_x_chatter, b.x_data?.japanese_unique_angles,
+    b.japanese_fan_perspective, b.english_fan_perspective, b.overlooked_angles, b.key_staff, b.overview
   ];
   for (const c of candidates) {
     if (isValidHook(c)) {
-      // Split by period/newline and take first sentence
       const clean = String(c).replace(/^[\-・\s]+/, "").split(/[。\n]/)[0].slice(0, 120);
       if (clean.length >= 10) return clean;
     }
@@ -767,29 +819,25 @@ function extractGoodHook(b) {
   return null;
 }
 
-async function startChat() {
+function startChat() {
   const info = state.workInfo;
   const topicLabel = state.selectedSeason && state.selectedSeason.name !== "全シリーズ"
     ? `${info.title_ja} (${state.selectedSeason.name})`
     : info.title_ja;
   document.getElementById("chat-topic").textContent = topicLabel;
   showScreen("screen-chat");
-  // Clear UI messages but keep state.conversation if resuming
   if (!state.isResuming) {
     state.conversation = [];
     document.getElementById("messages").innerHTML = "";
-    // Generate opening message
     const hook = extractGoodHook(state.briefing);
     let firstMsg;
     if (hook) {
       firstMsg = `Risaさん、お待たせしました🌸 今日は『${topicLabel}』ですね。\n\n下調べしてきたんですが、「${hook}」という話があって面白いなと思ったんです。\n\nRisaさん的にはこの辺、実際に観てみてどう感じました?`;
     } else {
-      // Fallback when research data is thin
-      firstMsg = `Risaさん、お待たせしました🌸 今日は『${topicLabel}』ですね!\n\n${info.year ? info.year + "年の" : ""}${info.studio ? info.studio + "制作の" : ""}作品ということで、正直なところ私の事前調査だと情報があまり拾えなかったので、今日はRisaさんに色々教えてもらえると嬉しいです。\n\nまず、この作品でRisaさんが一番印象的だったシーンや瞬間って、どこでした?`;
+      firstMsg = `Risaさん、お待たせしました🌸 今日は『${topicLabel}』ですね!\n\n${info.year ? info.year + "年の" : ""}${info.studio ? info.studio + "制作の" : ""}作品ということで、正直、私の事前調査だと情報があまり拾えなかったので、今日はRisaさんに色々教えてもらえると嬉しいです。\n\nまず、この作品でRisaさんが一番印象的だったシーンや瞬間って、どこでした?`;
     }
     addMessage("ai", firstMsg);
   } else {
-    // Resuming: render existing conversation
     document.getElementById("messages").innerHTML = "";
     const existing = [...state.conversation];
     state.conversation = [];
@@ -817,10 +865,7 @@ function showTyping() {
   messages.appendChild(typing);
   messages.scrollTop = messages.scrollHeight;
 }
-function hideTyping() {
-  const t = document.getElementById("typing-indicator");
-  if (t) t.remove();
-}
+function hideTyping() { const t = document.getElementById("typing-indicator"); if (t) t.remove(); }
 
 document.getElementById("send-btn").onclick = sendMessage;
 document.getElementById("chat-input").addEventListener("keydown", e => {
@@ -838,8 +883,7 @@ async function sendMessage() {
   const input = document.getElementById("chat-input");
   const text = input.value.trim();
   if (!text || state.isGenerating) return;
-  input.value = "";
-  input.style.height = "auto";
+  input.value = ""; input.style.height = "auto";
   addMessage("risa", text);
   state.isGenerating = true;
   showTyping();
@@ -847,12 +891,10 @@ async function sendMessage() {
     const reply = await callGeminiChat();
     hideTyping();
     addMessage("ai", reply);
-    // Persist conversation after each turn (fire-and-forget)
     saveSessionConversation();
   } catch (e) {
     hideTyping();
-    addMessage("ai", "ごめんなさい、エラーが起きました: " + (e.message || "不明"));
-    console.error(e);
+    addMessage("ai", "ごめんなさい、エラー: " + (e.message || "不明"));
   } finally {
     state.isGenerating = false;
   }
@@ -874,6 +916,9 @@ async function callGeminiChat() {
   return data.reply;
 }
 
+// ============================================================
+// ARTICLE
+// ============================================================
 document.getElementById("end-btn").onclick = async () => {
   if (state.conversation.length < 4) {
     if (!confirm("会話がまだ短いですが、本当に記事化しますか?")) return;
@@ -889,53 +934,40 @@ document.getElementById("end-btn").onclick = async () => {
     currentLang = "ja";
     switchLang("ja");
     renderRatings(result.ratings);
-    // Persist article + quotes + ratings to Supabase
     if (state.sessionId) {
       fetch(`${API_BASE}/api/session/update`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          id: state.sessionId,
-          conversation: state.conversation,
-          article: result.article_en,
-          article_ja: result.article_ja,
-          title_en: result.title_en,
-          title_ja: result.title_ja,
-          quotes: result.quotes || [],
-          ratings: result.ratings || null
+          id: state.sessionId, conversation: state.conversation,
+          article: result.article_en, article_ja: result.article_ja,
+          title_en: result.title_en, title_ja: result.title_ja,
+          quotes: result.quotes || [], ratings: result.ratings || null
         })
-      }).catch(e => console.warn("article save failed:", e));
+      }).catch(e => console.warn("save failed:", e));
     }
-    if (result.quotes && result.quotes.length) {
+    if (result.quotes?.length) {
       const ul = document.getElementById("quotes-list");
       ul.innerHTML = "";
-      result.quotes.forEach(q => {
-        const li = document.createElement("li");
-        li.textContent = q;
-        ul.appendChild(li);
-      });
+      result.quotes.forEach(q => { const li = document.createElement("li"); li.textContent = q; ul.appendChild(li); });
       document.getElementById("quotes-box").style.display = "block";
     }
   } catch (e) {
     document.getElementById("article-loading").style.display = "none";
     document.getElementById("article-result").style.display = "block";
     const errEl = document.getElementById("article-error");
-    errEl.style.display = "block";
-    errEl.textContent = "エラー: " + e.message;
-    console.error(e);
+    errEl.style.display = "block"; errEl.textContent = "エラー: " + e.message;
   }
 };
 
 let currentLang = "ja";
 let currentArticleData = null;
-
 function switchLang(lang) {
   currentLang = lang;
   document.getElementById("tab-ja").className = lang === "ja" ? "btn btn-secondary" : "btn btn-ghost";
   document.getElementById("tab-en").className = lang === "en" ? "btn btn-secondary" : "btn btn-ghost";
   renderArticleContent();
 }
-
 function renderArticleContent() {
   if (!currentArticleData) return;
   const d = currentArticleData;
@@ -956,7 +988,6 @@ async function generateArticle() {
   });
   const data = await res.json();
   if (data.error) throw new Error(data.error);
-  // Handle both new (title_ja/title_en/article_ja/article_en) and legacy (title/article)
   currentArticleData = {
     title_ja: data.title_ja || data.title || "",
     title_en: data.title_en || data.title || "",
@@ -971,30 +1002,21 @@ async function generateArticle() {
 function renderRatings(ratings) {
   if (!ratings) { document.getElementById("ratings-box").style.display = "none"; return; }
   const labels = {
-    animation: "🎨 作画",
-    story: "📖 脚本",
-    voice_acting: "🎙️ 声優",
-    music: "🎵 音楽",
-    direction: "🎬 演出",
-    characters: "👥 キャラ",
-    emotional_impact: "💖 感情",
-    overall: "⭐ 総合"
+    animation: "🎨 作画", story: "📖 脚本", voice_acting: "🎙️ 声優",
+    music: "🎵 音楽", direction: "🎬 演出", characters: "👥 キャラ",
+    emotional_impact: "💖 感情", overall: "⭐ 総合"
   };
-  const items = Object.entries(labels)
-    .map(([k, label]) => {
-      const r = ratings[k];
-      if (!r) return "";
-      const score = r.score || 0;
-      const comment = r.comment || "";
-      return `<div style="margin-bottom:10px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-          <span style="color:var(--gold); font-weight:bold;">${label}</span>
-          <span style="color:var(--accent); font-weight:bold;">${score}/10</span>
-        </div>
-        <div style="color:#c8c8d0; font-size:0.85em; line-height:1.5;">${escapeHtml(comment)}</div>
-      </div>`;
-    })
-    .join("");
+  const items = Object.entries(labels).map(([k, label]) => {
+    const r = ratings[k];
+    if (!r) return "";
+    return `<div style="margin-bottom:10px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+        <span style="color:var(--gold); font-weight:bold;">${label}</span>
+        <span style="color:var(--accent); font-weight:bold;">${r.score || 0}/10</span>
+      </div>
+      <div style="color:#c8c8d0; font-size:0.82em; line-height:1.5;">${escapeHtml(r.comment || "")}</div>
+    </div>`;
+  }).join("");
   document.getElementById("ratings-list").innerHTML = items;
   document.getElementById("ratings-box").style.display = "block";
 }
@@ -1003,23 +1025,30 @@ document.getElementById("send-banno-btn").onclick = () => {
   const article = document.getElementById("article-content").textContent;
   const quotes = Array.from(document.querySelectorAll("#quotes-list li")).map(li => li.textContent);
   const info = state.workInfo || {};
-  const subject = encodeURIComponent(`[Risa's Studio] 新しい記事ドラフト: ${info.title_ja || state.topic}`);
+  const subject = encodeURIComponent(`[Risa's Studio] ${info.title_ja || state.topic}`);
   const body = encodeURIComponent(
-    `Risaから新しい記事ドラフトが届きました 🌸\n\n` +
-    `作品: ${info.title_ja || state.topic}${state.selectedSeason ? " (" + state.selectedSeason.name + ")" : ""}\n\n` +
-    `--- 名言ベスト3 ---\n${quotes.map((q,i) => `${i+1}. ${q}`).join("\n")}\n\n` +
-    `--- 記事ドラフト ---\n${article}\n\n` +
-    `--- 元会話 ---\n${state.conversation.map(m => (m.role === "ai" ? "Alex" : "Risa") + ": " + m.content).join("\n")}`
+    `Risaから記事ドラフトが届きました 🌸\n\n作品: ${info.title_ja || state.topic}${state.selectedSeason ? " (" + state.selectedSeason.name + ")" : ""}\n\n--- 名言ベスト3 ---\n${quotes.map((q,i) => `${i+1}. ${q}`).join("\n")}\n\n--- 記事 ---\n${article}`
   );
   window.location.href = `mailto:?subject=${subject}&body=${body}`;
   showToast("メールアプリを開きました 📮");
 };
-
 document.getElementById("copy-btn").onclick = () => {
   const article = document.getElementById("article-content").textContent;
   navigator.clipboard.writeText(article).then(() => showToast(`コピーしました 📋 (${currentLang === "ja" ? "日本語" : "English"})`));
 };
 
+// ============================================================
+// UTILS
+// ============================================================
+function formatJST(isoString) {
+  if (!isoString) return "";
+  try {
+    return new Date(isoString).toLocaleString("ja-JP", {
+      timeZone: "Asia/Tokyo",
+      year: "numeric", month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit"
+    });
+  } catch (e) { return isoString; }
+}
 function escapeHtml(s) {
   if (!s) return "";
   return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br>");
@@ -1028,8 +1057,13 @@ function showToast(msg) {
   const t = document.getElementById("toast");
   t.textContent = msg;
   t.classList.add("show");
-  setTimeout(() => t.classList.remove("show"), 2800);
+  setTimeout(() => t.classList.remove("show"), 2500);
 }
+
+// ============================================================
+// INIT
+// ============================================================
+loadDashboard();
 </script>
 </body>
 </html>
