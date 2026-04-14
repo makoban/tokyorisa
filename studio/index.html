@@ -223,6 +223,32 @@
     text-align: center; color: var(--muted); font-size: 0.75em;
     padding: 10px 16px; background: rgba(0,0,0,0.3); flex-shrink: 0;
   }
+  .history-list { display: flex; flex-direction: column; gap: 12px; margin-top: 10px; }
+  .history-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 16px; cursor: pointer;
+    transition: all 0.2s; font-family: inherit;
+    text-align: left; color: var(--text);
+  }
+  .history-card:active { background: rgba(255,110,199,0.08); border-color: var(--accent); }
+  .history-title {
+    font-weight: bold; color: var(--gold); font-size: 1em;
+    margin-bottom: 4px; word-break: break-word;
+  }
+  .history-meta {
+    font-size: 0.8em; color: var(--muted);
+    display: flex; justify-content: space-between; gap: 8px; margin-top: 6px;
+  }
+  .history-badge {
+    display: inline-block; padding: 2px 10px; border-radius: 12px;
+    font-size: 0.72em; font-weight: bold;
+  }
+  .badge-draft { background: rgba(110,224,255,0.15); color: var(--accent2); border: 1px solid var(--accent2); }
+  .badge-done { background: rgba(255,211,105,0.15); color: var(--gold); border: 1px solid var(--gold); }
+  .badge-empty { background: rgba(150,150,150,0.15); color: var(--muted); border: 1px solid var(--muted); }
+  .history-empty {
+    text-align: center; padding: 50px 20px; color: var(--muted);
+  }
   .loading-card {
     background: var(--card); border: 1px solid var(--border); border-radius: 14px;
     padding: 40px 22px; text-align: center;
@@ -265,8 +291,24 @@
     </div>
   </div>
   <button id="start-btn" class="btn">この作品を探す 🔍</button>
-  <div style="height:14px;"></div>
+  <div style="height:10px;"></div>
+  <button class="btn btn-secondary" onclick="showHistory()">📚 過去の会話を見る</button>
+  <div style="height:10px;"></div>
   <button class="btn btn-ghost" onclick="logout()">ログアウト</button>
+</section>
+
+<section id="screen-history" class="screen" style="padding: 30px 24px; overflow-y: auto;">
+  <header>
+    <img src="../assets/risa-icon.jpeg" alt="Risa" style="width:50px; height:50px; border-radius:50%; border:2px solid var(--accent); margin-right:14px;">
+    <div style="flex:1;">
+      <h2 style="font-size:1.2em; color:var(--accent2);">📚 過去の会話</h2>
+      <p style="color:var(--muted); font-size:0.85em;">タップして続きから話せます</p>
+    </div>
+  </header>
+  <div id="history-loading" class="loading-card"><div class="loader"></div><p>読み込み中...</p></div>
+  <div id="history-container" class="history-list" style="display:none;"></div>
+  <div style="height:16px;"></div>
+  <button class="btn btn-ghost" onclick="goToTopic()">↩️ 新しい会話に戻る</button>
 </section>
 
 <section id="screen-confirm" class="screen">
@@ -556,26 +598,171 @@ async function saveSessionConversation() {
 }
 
 // ============================================================
+// HISTORY SCREEN
+// ============================================================
+function formatJST(isoString) {
+  if (!isoString) return "";
+  try {
+    const d = new Date(isoString);
+    return d.toLocaleString("ja-JP", {
+      timeZone: "Asia/Tokyo",
+      year: "numeric", month: "numeric", day: "numeric",
+      hour: "2-digit", minute: "2-digit"
+    });
+  } catch (e) {
+    return isoString;
+  }
+}
+
+async function showHistory() {
+  showScreen("screen-history");
+  document.getElementById("history-loading").style.display = "block";
+  document.getElementById("history-container").style.display = "none";
+  try {
+    const res = await fetch(`${API_BASE}/api/session/list`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({})
+    });
+    const data = await res.json();
+    renderHistory(data.sessions || []);
+  } catch (e) {
+    console.error("history load failed:", e);
+    document.getElementById("history-container").innerHTML = `<div class="history-empty">読み込みエラー: ${e.message}</div>`;
+    document.getElementById("history-container").style.display = "block";
+  } finally {
+    document.getElementById("history-loading").style.display = "none";
+  }
+}
+
+function renderHistory(sessions) {
+  const container = document.getElementById("history-container");
+  container.style.display = "block";
+  if (!sessions.length) {
+    container.innerHTML = `<div class="history-empty">まだ会話履歴がありません 🌸<br><br>新しい作品について話してみましょう</div>`;
+    return;
+  }
+  container.innerHTML = sessions.map(s => {
+    const info = s.work_info || {};
+    const title = info.title_ja || s.topic || "無題";
+    const season = s.season?.name ? ` (${s.season.name})` : "";
+    const dateStr = formatJST(s.updated_at || s.created_at);
+    let badge, badgeClass;
+    if (s.article) { badge = "記事化済"; badgeClass = "badge-done"; }
+    else if (s.conversation?.length || (Array.isArray(s.conversation) && s.conversation.length > 0)) { badge = "会話中"; badgeClass = "badge-draft"; }
+    else { badge = "未開始"; badgeClass = "badge-empty"; }
+    return `
+      <button class="history-card" onclick="resumeSession('${s.id}')">
+        <div class="history-title">${escapeHtml(title)}${escapeHtml(season)}</div>
+        <div class="history-meta">
+          <span>🕐 ${dateStr} (JST)</span>
+          <span class="history-badge ${badgeClass}">${badge}</span>
+        </div>
+      </button>
+    `;
+  }).join("");
+}
+
+async function resumeSession(id) {
+  showToast("読み込み中...");
+  try {
+    const res = await fetch(`${API_BASE}/api/session/get`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id })
+    });
+    const data = await res.json();
+    if (data.error || !data.session) {
+      showToast("セッションが見つかりません");
+      return;
+    }
+    const s = data.session;
+    state.sessionId = s.id;
+    state.topic = s.topic;
+    state.workInfo = s.work_info;
+    state.selectedSeason = s.season;
+    state.briefing = s.briefing;
+    state.conversation = Array.isArray(s.conversation) ? s.conversation : [];
+    state.isResuming = true;
+    if (s.conversation?.length) {
+      startChat();
+      showToast(`📖 ${s.conversation.length}件のメッセージを復元`);
+    } else {
+      startChat();
+    }
+  } catch (e) {
+    console.error("resume failed:", e);
+    showToast("読み込みエラー: " + e.message);
+  }
+}
+
+// ============================================================
 // CHAT
 // ============================================================
+function isValidHook(s) {
+  if (!s || typeof s !== "string") return false;
+  const lower = s.trim();
+  if (lower.length < 10) return false;
+  const badPatterns = [
+    "情報なし", "特になし", "抽出できません", "提供されたデータ",
+    "データから", "情報がありません", "不明", "n/a", "N/A"
+  ];
+  return !badPatterns.some(p => lower.includes(p));
+}
+
+function extractGoodHook(b) {
+  if (!b) return null;
+  // Try all possible sources for a concrete hook
+  const candidates = [
+    b.x_data?.japan_x_chatter,
+    b.x_data?.hot_scenes,
+    b.x_data?.english_x_chatter,
+    b.x_data?.japanese_unique_angles,
+    b.japanese_fan_perspective,
+    b.english_fan_perspective,
+    b.overlooked_angles,
+    b.key_staff,
+    b.overview
+  ];
+  for (const c of candidates) {
+    if (isValidHook(c)) {
+      // Split by period/newline and take first sentence
+      const clean = String(c).replace(/^[\-・\s]+/, "").split(/[。\n]/)[0].slice(0, 120);
+      if (clean.length >= 10) return clean;
+    }
+  }
+  return null;
+}
+
 async function startChat() {
   const info = state.workInfo;
-  const topicLabel = state.selectedSeason.name === "全シリーズ"
-    ? info.title_ja
-    : `${info.title_ja} (${state.selectedSeason.name})`;
+  const topicLabel = state.selectedSeason && state.selectedSeason.name !== "全シリーズ"
+    ? `${info.title_ja} (${state.selectedSeason.name})`
+    : info.title_ja;
   document.getElementById("chat-topic").textContent = topicLabel;
   showScreen("screen-chat");
-  state.conversation = [];
-  // Generate opening message using briefing so AI opens with a concrete hook
-  const b = state.briefing || {};
-  const hook = b.japan_x_chatter || b.japanese_fan_perspective || b.english_x_chatter || b.english_fan_perspective || b.hot_scenes || "";
-  let firstMsg;
-  if (hook) {
-    firstMsg = `Risaさん、お待たせしました🌸 今日は『${topicLabel}』ですね。\n\nちょっと下調べしてきたんですが、${typeof hook === "string" ? hook.split(/[、。\n]/)[0].slice(0, 80) : ""}という話がファンの間で出てて、面白いなと思ったんです。\n\nRisaさん的にはこの辺、実際に観てみてどう感じました?`;
+  // Clear UI messages but keep state.conversation if resuming
+  if (!state.isResuming) {
+    state.conversation = [];
+    document.getElementById("messages").innerHTML = "";
+    // Generate opening message
+    const hook = extractGoodHook(state.briefing);
+    let firstMsg;
+    if (hook) {
+      firstMsg = `Risaさん、お待たせしました🌸 今日は『${topicLabel}』ですね。\n\n下調べしてきたんですが、「${hook}」という話があって面白いなと思ったんです。\n\nRisaさん的にはこの辺、実際に観てみてどう感じました?`;
+    } else {
+      // Fallback when research data is thin
+      firstMsg = `Risaさん、お待たせしました🌸 今日は『${topicLabel}』ですね!\n\n${info.year ? info.year + "年の" : ""}${info.studio ? info.studio + "制作の" : ""}作品ということで、正直なところ私の事前調査だと情報があまり拾えなかったので、今日はRisaさんに色々教えてもらえると嬉しいです。\n\nまず、この作品でRisaさんが一番印象的だったシーンや瞬間って、どこでした?`;
+    }
+    addMessage("ai", firstMsg);
   } else {
-    firstMsg = `Risaさん、お待たせしました🌸 今日は『${topicLabel}』について話したいんですよね!\n\n早速ですが、この作品で一番Risaさんの心に残ったシーンってどこでした?`;
+    // Resuming: render existing conversation
+    document.getElementById("messages").innerHTML = "";
+    const existing = [...state.conversation];
+    state.conversation = [];
+    for (const msg of existing) addMessage(msg.role, msg.content);
+    state.isResuming = false;
   }
-  addMessage("ai", firstMsg);
 }
 
 function addMessage(role, content) {
