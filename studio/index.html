@@ -336,6 +336,48 @@
     text-align: center; color: var(--muted); font-size: 0.72em;
     padding: 8px 16px; background: rgba(0,0,0,0.3); flex-shrink: 0;
   }
+  .progress-bar {
+    background: rgba(0,0,0,0.4);
+    border-bottom: 1px solid var(--border);
+    padding: 8px 14px;
+    flex-shrink: 0;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .progress-bar:active { background: rgba(0,0,0,0.6); }
+  .progress-header {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 0.72em; margin-bottom: 4px;
+  }
+  .progress-header .label { color: var(--accent2); font-weight: bold; }
+  .progress-header .value { color: var(--gold); font-weight: bold; }
+  .progress-track {
+    height: 6px; border-radius: 3px;
+    background: rgba(255,255,255,0.1); overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%; border-radius: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2), var(--gold));
+    transition: width 0.5s;
+  }
+  .progress-detail {
+    display: none;
+    margin-top: 10px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 4px 8px;
+    font-size: 0.68em;
+  }
+  .progress-detail.open { display: grid; }
+  .progress-item {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 2px 0;
+  }
+  .progress-item-label { color: var(--muted); }
+  .progress-item-score { color: var(--gold); font-weight: bold; }
+  .progress-item-score.zero { color: #555; }
+  .progress-item-score.low { color: var(--ai); }
+  .progress-item-score.mid { color: var(--accent); }
+  .progress-item-score.high { color: var(--gold); }
 
   /* ========== Article ========== */
   #screen-article { overflow-y: auto; padding: 24px 22px; }
@@ -396,7 +438,7 @@
   <div class="dash-header">
     <img src="../assets/risa-icon.jpeg" alt="Risa">
     <div class="greeting">
-      <h1>Risa's Studio 🌸 <span class="version-badge">Ver 1.1</span></h1>
+      <h1>Risa's Studio 🌸 <span class="version-badge">Ver 1.2</span></h1>
       <p id="greeting-text">こんにちは Risaさん</p>
     </div>
   </div>
@@ -469,6 +511,16 @@
     </div>
     <button class="end-btn" id="end-btn">記事化 ✓</button>
   </header>
+  <div class="progress-bar" id="progress-bar" onclick="toggleProgressDetail()">
+    <div class="progress-header">
+      <span class="label" id="progress-label">📊 取れ高: 0%</span>
+      <span class="value" id="progress-msg-count">0 messages</span>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" id="progress-fill" style="width:0%;"></div>
+    </div>
+    <div class="progress-detail" id="progress-detail"></div>
+  </div>
   <div class="chat-messages" id="messages"></div>
   <div class="chat-input-area">
     <textarea id="chat-input" placeholder="メッセージを入力..." rows="1"></textarea>
@@ -970,12 +1022,72 @@ async function sendMessage() {
     hideTyping();
     addMessage("ai", reply);
     saveSessionConversation();
+    // Update progress meter (fire-and-forget, don't block)
+    updateProgressMeter();
   } catch (e) {
     hideTyping();
     addMessage("ai", "ごめんなさい、エラー: " + (e.message || "不明"));
   } finally {
     state.isGenerating = false;
   }
+}
+
+// ============================================================
+// PROGRESS METER
+// ============================================================
+const CATEGORY_LABELS = {
+  animation: "🎨 作画",
+  story: "📖 脚本",
+  voice_acting: "🎙️ 声優",
+  music: "🎵 音楽",
+  direction: "🎬 演出",
+  characters: "👥 キャラ",
+  emotional_impact: "💖 感情",
+  memorable_scenes: "🎞 名場面",
+  female_gaze: "🌸 女性視点",
+  rewatch_value: "🔁 リピート",
+  comparable_works: "🔀 比較",
+  improvements: "⚠️ 改善点",
+  overlooked_angles: "🇯🇵 日本視点",
+  overall_rating: "⭐ 総合評価",
+};
+
+async function updateProgressMeter() {
+  try {
+    const res = await fetch(`${API_BASE}/api/analyze`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        conversation: state.conversation,
+        workInfo: state.workInfo
+      })
+    });
+    const data = await res.json();
+    if (data.error) { console.warn("analyze failed:", data.error); return; }
+    renderProgress(data);
+  } catch (e) { console.warn("analyze error:", e); }
+}
+
+function renderProgress(data) {
+  const progress = data.progress || 0;
+  const coverage = data.coverage || {};
+  document.getElementById("progress-fill").style.width = progress + "%";
+  document.getElementById("progress-label").textContent = `📊 取れ高: ${progress}%`;
+  document.getElementById("progress-msg-count").textContent = `${data.risa_message_count || 0} 発言 / ${data.message_count || 0}`;
+
+  const detail = document.getElementById("progress-detail");
+  detail.innerHTML = Object.entries(CATEGORY_LABELS).map(([key, label]) => {
+    const score = coverage[key] || 0;
+    const cls = score === 0 ? "zero" : score < 4 ? "low" : score < 7 ? "mid" : "high";
+    return `<div class="progress-item">
+      <span class="progress-item-label">${label}</span>
+      <span class="progress-item-score ${cls}">${score}/10</span>
+    </div>`;
+  }).join("");
+}
+
+function toggleProgressDetail() {
+  document.getElementById("progress-detail").classList.toggle("open");
 }
 
 async function callGeminiChat() {
