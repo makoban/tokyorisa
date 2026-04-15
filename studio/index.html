@@ -532,7 +532,7 @@
   <div class="dash-header">
     <img src="../assets/risa-icon.jpeg" alt="Risa">
     <div class="greeting">
-      <h1>Risa's Studio 🌸 <span class="version-badge">Ver 2.0</span></h1>
+      <h1>Risa's Studio 🌸 <span class="version-badge">Ver 2.1</span></h1>
       <p id="greeting-text">こんにちは Risaさん</p>
     </div>
   </div>
@@ -1142,12 +1142,22 @@ function resetSilenceTimer() {
 }
 
 function startVoiceInput() {
+  // Stop any AI speech/audio first (mic + speaker conflict on mobile)
+  if (currentAudio) { try { currentAudio.pause(); currentAudio.currentTime = 0; } catch(e){} currentAudio = null; }
+  if (window.speechSynthesis) { try { window.speechSynthesis.cancel(); } catch(e){} }
+
+  // Stop and discard any existing recognition instance (reuse causes issues)
+  if (recognition) {
+    try { recognition.abort(); } catch(e){}
+    recognition = null;
+  }
+  if (silenceTimer) { clearTimeout(silenceTimer); silenceTimer = null; }
+
+  // Create a FRESH instance each time
+  recognition = initSpeechRecognition();
   if (!recognition) {
-    recognition = initSpeechRecognition();
-    if (!recognition) {
-      showToast("お使いのブラウザは音声入力に対応していません");
-      return;
-    }
+    showToast("お使いのブラウザは音声入力に対応していません");
+    return;
   }
   const btn = document.getElementById("voice-btn");
   const input = document.getElementById("chat-input");
@@ -1197,6 +1207,11 @@ function stopVoiceInput() {
   const btn = document.getElementById("voice-btn");
   btn.classList.remove("listening");
   btn.textContent = "🎤";
+  // Discard recognition instance so next call creates a fresh one
+  if (recognition) {
+    try { recognition.onresult = null; recognition.onerror = null; recognition.onend = null; } catch(e){}
+    recognition = null;
+  }
 }
 
 document.getElementById("voice-btn").onclick = () => {
@@ -1318,8 +1333,11 @@ async function speakAIResponse(text) {
     }
     // Play base64 MP3
     currentAudio = new Audio("data:audio/mp3;base64," + data.audio);
+    currentAudio.onended = () => { currentAudio = null; };
+    currentAudio.onerror = () => { currentAudio = null; };
     currentAudio.play().catch(e => {
       console.warn("audio play failed:", e);
+      currentAudio = null;
       speakAIResponseBrowserFallback(text);
     });
   } catch (e) {
