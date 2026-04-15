@@ -532,7 +532,7 @@
   <div class="dash-header">
     <img src="../assets/risa-icon.jpeg" alt="Risa">
     <div class="greeting">
-      <h1>Risa's Studio 🌸 <span class="version-badge">Ver 1.8</span></h1>
+      <h1>Risa's Studio 🌸 <span class="version-badge">Ver 1.9</span></h1>
       <p id="greeting-text">こんにちは Risaさん</p>
     </div>
   </div>
@@ -1338,7 +1338,15 @@ async function sendMessage() {
   const input = document.getElementById("chat-input");
   const text = input.value.trim();
   if (!text || state.isGenerating) return;
-  input.value = ""; input.style.height = "auto";
+  // Stop voice recognition if active (otherwise it might re-fill the input)
+  if (isListening) {
+    try { recognition && recognition.stop(); } catch(e){}
+    stopVoiceInput();
+  }
+  // Clear input immediately and reset height
+  input.value = "";
+  input.style.height = "auto";
+  input.blur();
   addMessage("risa", text);
   state.isGenerating = true;
   showTyping();
