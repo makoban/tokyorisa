@@ -145,35 +145,57 @@
     padding: 10px 14px; border-radius: 8px; margin-bottom: 16px;
     color: var(--gold); font-size: 0.85em;
   }
-  .candidate-grid {
-    display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+  .candidate-list {
+    display: flex; flex-direction: column; gap: 10px;
   }
   .candidate-card {
     background: var(--card); border: 2px solid var(--border);
     border-radius: 12px; overflow: hidden;
     cursor: pointer; transition: all 0.2s;
-    display: flex; flex-direction: column;
-    padding: 0;
+    display: flex; gap: 12px; padding: 10px;
+    text-align: left; font-family: inherit; color: var(--text);
+    width: 100%;
   }
   .candidate-card:active {
     border-color: var(--accent);
-    transform: scale(0.98);
+    transform: scale(0.99);
+    background: rgba(255,110,199,0.05);
   }
   .candidate-card img {
-    width: 100%; aspect-ratio: 2/3; object-fit: cover;
-    display: block; background: #000;
+    width: 70px; height: 100px;
+    object-fit: cover;
+    border-radius: 8px;
+    flex-shrink: 0;
+    background: #000;
   }
-  .candidate-card-body { padding: 10px; }
+  .candidate-card-body {
+    flex: 1; min-width: 0;
+    display: flex; flex-direction: column;
+    justify-content: space-between;
+  }
   .candidate-card-title {
     color: var(--gold); font-weight: bold;
-    font-size: 0.85em; line-height: 1.3;
+    font-size: 0.92em; line-height: 1.35;
     overflow: hidden; text-overflow: ellipsis;
     display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    margin-bottom: 2px;
+  }
+  .candidate-card-romaji {
+    color: var(--accent2); font-size: 0.72em;
     margin-bottom: 4px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
   .candidate-card-meta {
     color: var(--muted); font-size: 0.72em;
-    display: flex; gap: 6px; flex-wrap: wrap;
+    display: flex; gap: 8px; flex-wrap: wrap;
+    margin-bottom: 4px;
+  }
+  .candidate-card-meta span { white-space: nowrap; }
+  .candidate-card-synopsis {
+    color: #c8c8d0; font-size: 0.75em;
+    line-height: 1.45;
+    overflow: hidden; text-overflow: ellipsis;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
   }
 
   /* ========== Loading/Confirm shared ========== */
@@ -627,25 +649,35 @@ function renderCandidateGrid(candidates, gemini) {
   document.getElementById("confirm-header-title").textContent = "どの作品ですか? 🎬";
   document.getElementById("confirm-header-sub").textContent = "タップして選んでください";
   const container = document.getElementById("confirm-container");
-  const gridHtml = `
-    <div class="confirm-hint">💡 画像を見て、あなたが話したい作品をタップしてください</div>
-    <div class="candidate-grid">
-      ${candidates.map((c, i) => `
+  const listHtml = `
+    <div class="confirm-hint">💡 タップしてあなたが話したい作品を選んでください</div>
+    <div class="candidate-list">
+      ${candidates.map((c, i) => {
+        const jpTitle = c.title_japanese || c.title;
+        const romaji = c.title && c.title !== jpTitle ? c.title : "";
+        const scoreFormatted = c.score ? (typeof c.score === "number" ? c.score.toFixed(1) : c.score) : "";
+        return `
         <button class="candidate-card" onclick="selectCandidate(${i})">
-          ${c.image_url ? `<img src="${escapeHtml(c.image_url)}" alt="${escapeHtml(c.title)}" loading="lazy">` : '<div style="aspect-ratio:2/3; background:var(--bg2); display:flex; align-items:center; justify-content:center; color:var(--muted);">🖼️</div>'}
+          ${c.image_url ? `<img src="${escapeHtml(c.image_url)}" alt="${escapeHtml(c.title)}" loading="lazy">` : '<div style="width:70px;height:100px;background:var(--bg2);display:flex;align-items:center;justify-content:center;color:var(--muted);border-radius:8px;flex-shrink:0;">🖼</div>'}
           <div class="candidate-card-body">
-            <div class="candidate-card-title">${escapeHtml(c.title_japanese || c.title)}</div>
-            <div class="candidate-card-meta">
-              ${c.year ? `<span>${c.year}</span>` : ""}
-              ${c.episodes ? `<span>${c.episodes}話</span>` : ""}
-              ${c.score ? `<span>⭐${c.score}</span>` : ""}
+            <div>
+              <div class="candidate-card-title">${escapeHtml(jpTitle)}</div>
+              ${romaji ? `<div class="candidate-card-romaji">${escapeHtml(romaji)}</div>` : ""}
+              <div class="candidate-card-meta">
+                ${c.year ? `<span>📅 ${c.year}</span>` : ""}
+                ${c.episodes ? `<span>📺 ${c.episodes}話</span>` : ""}
+                ${scoreFormatted ? `<span>⭐ ${scoreFormatted}</span>` : ""}
+                ${c.studios ? `<span>🏢 ${escapeHtml(c.studios.split(",")[0])}</span>` : ""}
+              </div>
             </div>
+            ${c.synopsis ? `<div class="candidate-card-synopsis">${escapeHtml(c.synopsis)}</div>` : ""}
           </div>
         </button>
-      `).join("")}
+        `;
+      }).join("")}
     </div>
   `;
-  container.innerHTML = gridHtml;
+  container.innerHTML = listHtml;
 }
 
 function renderTextOnlyConfirm(info) {
