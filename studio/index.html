@@ -649,24 +649,39 @@ function renderCandidateGrid(candidates, gemini) {
   document.getElementById("confirm-header-title").textContent = "どの作品ですか? 🎬";
   document.getElementById("confirm-header-sub").textContent = "タップして選んでください";
   const container = document.getElementById("confirm-container");
+  const baseTitle = (candidates[0]?.title_japanese || candidates[0]?.title || state.topic || "").replace(/\s*\(?\d{4}\)?\s*$/, "").trim();
+  const allSeriesBtn = `
+    <button class="candidate-card" onclick="selectAllSeries()" style="border-color:var(--gold); background:rgba(255,211,105,0.08);">
+      <div style="width:70px;height:100px;background:linear-gradient(135deg,rgba(255,211,105,0.2),rgba(255,110,199,0.2));border-radius:8px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:2em;">🌐</div>
+      <div class="candidate-card-body">
+        <div>
+          <div class="candidate-card-title" style="color:var(--gold);">シリーズ全体で話す</div>
+          <div class="candidate-card-romaji">All seasons & movies</div>
+          <div class="candidate-card-meta"><span>作品全体について</span></div>
+        </div>
+        <div class="candidate-card-synopsis">特定のシーズンではなく、${escapeHtml(baseTitle) || "この作品"}シリーズ全体についてRisaさんと語りたい時はこちら</div>
+      </div>
+    </button>
+  `;
   const listHtml = `
     <div class="confirm-hint">💡 タップしてあなたが話したい作品を選んでください</div>
     <div class="candidate-list">
+      ${allSeriesBtn}
       ${candidates.map((c, i) => {
-        const jpTitle = c.title_japanese || c.title;
+        const jpTitle = c.title_japanese || c.title || "";
         const romaji = c.title && c.title !== jpTitle ? c.title : "";
         const scoreFormatted = c.score ? (typeof c.score === "number" ? c.score.toFixed(1) : c.score) : "";
         return `
         <button class="candidate-card" onclick="selectCandidate(${i})">
-          ${c.image_url ? `<img src="${escapeHtml(c.image_url)}" alt="${escapeHtml(c.title)}" loading="lazy">` : '<div style="width:70px;height:100px;background:var(--bg2);display:flex;align-items:center;justify-content:center;color:var(--muted);border-radius:8px;flex-shrink:0;">🖼</div>'}
+          ${c.image_url ? `<img src="${escapeHtml(c.image_url)}" alt="${escapeHtml(c.title)}" loading="lazy" onerror="this.style.display='none'">` : '<div style="width:70px;height:100px;background:var(--bg2);display:flex;align-items:center;justify-content:center;color:var(--muted);border-radius:8px;flex-shrink:0;">🖼</div>'}
           <div class="candidate-card-body">
             <div>
-              <div class="candidate-card-title">${escapeHtml(jpTitle)}</div>
+              <div class="candidate-card-title">${escapeHtml(jpTitle) || "(無題)"}</div>
               ${romaji ? `<div class="candidate-card-romaji">${escapeHtml(romaji)}</div>` : ""}
               <div class="candidate-card-meta">
-                ${c.year ? `<span>📅 ${c.year}</span>` : ""}
-                ${c.episodes ? `<span>📺 ${c.episodes}話</span>` : ""}
-                ${scoreFormatted ? `<span>⭐ ${scoreFormatted}</span>` : ""}
+                ${c.year ? `<span>📅 ${escapeHtml(String(c.year))}</span>` : ""}
+                ${c.episodes ? `<span>📺 ${escapeHtml(String(c.episodes))}話</span>` : ""}
+                ${scoreFormatted ? `<span>⭐ ${escapeHtml(String(scoreFormatted))}</span>` : ""}
                 ${c.studios ? `<span>🏢 ${escapeHtml(c.studios.split(",")[0])}</span>` : ""}
               </div>
             </div>
@@ -678,6 +693,24 @@ function renderCandidateGrid(candidates, gemini) {
     </div>
   `;
   container.innerHTML = listHtml;
+}
+
+async function selectAllSeries() {
+  // Use the first candidate as base info, but mark as "all series"
+  const baseCand = state.candidates[0] || {};
+  const baseTitle = (baseCand.title_japanese || baseCand.title || state.topic || "").replace(/\s*\(?\d{4}\)?\s*$/, "").trim();
+  state.workInfo = {
+    title_ja: baseTitle,
+    title_en: (baseCand.title_english || baseCand.title || state.topic).replace(/\s*\(?\d{4}\)?\s*$/, "").trim(),
+    studio: baseCand.studios || "",
+    year: "",
+    genre: (baseCand.genres || []).join(", "),
+    synopsis: baseCand.synopsis || "",
+    image_url: baseCand.image_url,
+    seasons: [{ name: "全シリーズ", year: "", episodes: "", brief: "シリーズ全体" }]
+  };
+  state.selectedSeason = state.workInfo.seasons[0];
+  proceedToChat();
 }
 
 function renderTextOnlyConfirm(info) {
