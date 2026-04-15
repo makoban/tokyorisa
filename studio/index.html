@@ -312,9 +312,34 @@
   .msg-typing span:nth-child(2) { animation-delay: 0.2s; }
   .msg-typing span:nth-child(3) { animation-delay: 0.4s; }
   @keyframes typing { 0%, 60%, 100% { opacity: 0.3; transform: translateY(0); } 30% { opacity: 1; transform: translateY(-4px); } }
+  .voice-btn {
+    width: 46px; height: 46px; border-radius: 50%;
+    background: var(--card); border: 2px solid var(--accent2); color: var(--accent2);
+    cursor: pointer; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.3em; transition: all 0.2s; font-family: inherit;
+  }
+  .voice-btn:active { transform: scale(0.92); }
+  .voice-btn.listening {
+    background: var(--accent);
+    color: #000;
+    border-color: var(--accent);
+    animation: pulseMic 1.2s ease-in-out infinite;
+  }
+  @keyframes pulseMic {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(255,110,199,0.6); }
+    50% { box-shadow: 0 0 0 12px rgba(255,110,199,0); }
+  }
+  .voice-toggle-tts {
+    background: transparent; border: 1px solid var(--border);
+    color: var(--muted); border-radius: 14px;
+    padding: 3px 8px; font-size: 0.65em;
+    cursor: pointer; font-family: inherit;
+  }
+  .voice-toggle-tts.on { color: var(--gold); border-color: var(--gold); }
   .chat-input-area {
     padding: 12px 14px; background: rgba(0,0,0,0.4); backdrop-filter: blur(10px);
-    border-top: 1px solid var(--border); display: flex; gap: 10px;
+    border-top: 1px solid var(--border); display: flex; gap: 8px;
     align-items: flex-end; flex-shrink: 0;
   }
   .chat-input-area textarea {
@@ -343,22 +368,91 @@
     flex-shrink: 0;
     cursor: pointer;
     transition: background 0.2s;
+    position: relative;
+    overflow: visible;
   }
   .progress-bar:active { background: rgba(0,0,0,0.6); }
+  .progress-bar.celebrating {
+    animation: celebrate 0.8s ease-out;
+  }
+  @keyframes celebrate {
+    0%, 100% { background: rgba(0,0,0,0.4); }
+    50% {
+      background: rgba(255, 211, 105, 0.2);
+      box-shadow: 0 0 25px rgba(255, 211, 105, 0.4);
+    }
+  }
   .progress-header {
     display: flex; justify-content: space-between; align-items: center;
     font-size: 0.72em; margin-bottom: 4px;
   }
   .progress-header .label { color: var(--accent2); font-weight: bold; }
   .progress-header .value { color: var(--gold); font-weight: bold; }
+  .progress-header .label.pulsing {
+    animation: labelPulse 0.8s ease-out;
+  }
+  @keyframes labelPulse {
+    0% { transform: scale(1); }
+    30% { transform: scale(1.15); color: var(--gold); }
+    100% { transform: scale(1); color: var(--accent2); }
+  }
   .progress-track {
-    height: 6px; border-radius: 3px;
+    height: 8px; border-radius: 4px;
     background: rgba(255,255,255,0.1); overflow: hidden;
+    position: relative;
   }
   .progress-fill {
-    height: 100%; border-radius: 3px;
+    height: 100%; border-radius: 4px;
     background: linear-gradient(90deg, var(--accent), var(--accent2), var(--gold));
-    transition: width 0.5s;
+    transition: width 0.8s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+    position: relative;
+  }
+  .progress-fill::after {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+    transform: translateX(-100%);
+  }
+  .progress-fill.shimmer::after {
+    animation: shimmer 1s ease-out;
+  }
+  @keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+  .sparkle {
+    position: absolute;
+    pointer-events: none;
+    font-size: 1.4em;
+    animation: sparkleFloat 1.4s ease-out forwards;
+    z-index: 50;
+  }
+  @keyframes sparkleFloat {
+    0% { opacity: 0; transform: translateY(0) scale(0.5) rotate(0deg); }
+    30% { opacity: 1; transform: translateY(-12px) scale(1.2) rotate(180deg); }
+    100% { opacity: 0; transform: translateY(-40px) scale(0.8) rotate(360deg); }
+  }
+  .progress-increase-badge {
+    position: absolute;
+    right: 14px;
+    top: -8px;
+    background: var(--gold);
+    color: #000;
+    font-size: 0.7em;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-weight: bold;
+    animation: badgePop 1.5s ease-out forwards;
+    pointer-events: none;
+    box-shadow: 0 3px 10px rgba(255, 211, 105, 0.5);
+  }
+  @keyframes badgePop {
+    0% { opacity: 0; transform: translateY(10px) scale(0.6); }
+    20% { opacity: 1; transform: translateY(0) scale(1.1); }
+    40% { transform: translateY(0) scale(1); }
+    80% { opacity: 1; }
+    100% { opacity: 0; transform: translateY(-20px); }
   }
   .progress-detail {
     display: none;
@@ -438,7 +532,7 @@
   <div class="dash-header">
     <img src="../assets/risa-icon.jpeg" alt="Risa">
     <div class="greeting">
-      <h1>Risa's Studio 🌸 <span class="version-badge">Ver 1.2</span></h1>
+      <h1>Risa's Studio 🌸 <span class="version-badge">Ver 1.3</span></h1>
       <p id="greeting-text">こんにちは Risaさん</p>
     </div>
   </div>
@@ -523,10 +617,14 @@
   </div>
   <div class="chat-messages" id="messages"></div>
   <div class="chat-input-area">
-    <textarea id="chat-input" placeholder="メッセージを入力..." rows="1"></textarea>
+    <button class="voice-btn" id="voice-btn" title="音声入力">🎤</button>
+    <textarea id="chat-input" placeholder="メッセージ / 🎤で音声入力" rows="1"></textarea>
     <button class="send-btn" id="send-btn">▶</button>
   </div>
-  <div class="footer-tip">疲れたら「記事化」で終了 🌸 / 「← ダッシュボード」で保存して戻る</div>
+  <div class="footer-tip">
+    <button class="voice-toggle-tts" id="tts-toggle" onclick="toggleTTS()">🔊 読み上げ OFF</button>
+    &nbsp;&nbsp;疲れたら「記事化」で終了 🌸
+  </div>
 </section>
 
 <!-- ========== ARTICLE ========== -->
@@ -577,6 +675,7 @@ const state = {
   candidates: [],
   isGenerating: false,
   isResuming: false,
+  lastProgress: 0,
 };
 
 function showScreen(id) {
@@ -962,18 +1061,32 @@ function startChat() {
     const hook = extractGoodHook(state.briefing);
     let firstMsg;
     if (hook) {
-      firstMsg = `Risaさん、お待たせしました🌸 今日は『${topicLabel}』ですね。\n\n下調べしてきたんですが、「${hook}」という話があって面白いなと思ったんです。\n\nRisaさん的にはこの辺、実際に観てみてどう感じました?`;
+      firstMsg = `こんにちは、AI記者の「サノイチ」です🌸\n\n今日は『${topicLabel}』について Risaさんとお話したいです!\n\n下調べしてきたんですが、「${hook}」という話があって面白いなと思ったんです。\n\nRisaさん的にはこの辺、実際に観てみてどう感じました?`;
     } else {
-      firstMsg = `Risaさん、お待たせしました🌸 今日は『${topicLabel}』ですね!\n\n${info.year ? info.year + "年の" : ""}${info.studio ? info.studio + "制作の" : ""}作品ということで、正直、私の事前調査だと情報があまり拾えなかったので、今日はRisaさんに色々教えてもらえると嬉しいです。\n\nまず、この作品でRisaさんが一番印象的だったシーンや瞬間って、どこでした?`;
+      firstMsg = `こんにちは、AI記者の「サノイチ」です🌸\n\n今日は『${topicLabel}』について Risaさんとお話したいです!${info.year ? info.year + "年の" : ""}${info.studio ? info.studio + "制作" : ""}なんですね。\n\n正直なところ、私の事前調査だと情報があまり拾えなかったので、今日はRisaさんに色々教えてもらえると嬉しいです。\n\nまず、この作品でRisaさんが一番印象的だったシーンや瞬間って、どこでした?`;
     }
     addMessage("ai", firstMsg);
+    // Reset progress meter for fresh chat
+    resetProgressMeter();
   } else {
     document.getElementById("messages").innerHTML = "";
     const existing = [...state.conversation];
     state.conversation = [];
     for (const msg of existing) addMessage(msg.role, msg.content);
     state.isResuming = false;
+    // Analyze resumed conversation to show current progress
+    resetProgressMeter();
+    updateProgressMeter();
   }
+}
+
+function resetProgressMeter() {
+  state.lastProgress = 0;
+  document.getElementById("progress-fill").style.width = "0%";
+  document.getElementById("progress-label").textContent = "📊 取れ高: 0%";
+  document.getElementById("progress-msg-count").textContent = "0 発言 / 0";
+  document.getElementById("progress-detail").innerHTML = "";
+  document.getElementById("progress-detail").classList.remove("open");
 }
 
 function addMessage(role, content) {
@@ -996,6 +1109,99 @@ function showTyping() {
   messages.scrollTop = messages.scrollHeight;
 }
 function hideTyping() { const t = document.getElementById("typing-indicator"); if (t) t.remove(); }
+
+// ============================================================
+// VOICE (Web Speech API)
+// ============================================================
+let recognition = null;
+let isListening = false;
+let ttsEnabled = false;
+
+function initSpeechRecognition() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) return null;
+  const rec = new SR();
+  rec.lang = "ja-JP";
+  rec.continuous = false;
+  rec.interimResults = true;
+  rec.maxAlternatives = 1;
+  return rec;
+}
+
+function startVoiceInput() {
+  if (!recognition) {
+    recognition = initSpeechRecognition();
+    if (!recognition) {
+      showToast("お使いのブラウザは音声入力に対応していません");
+      return;
+    }
+  }
+  const btn = document.getElementById("voice-btn");
+  const input = document.getElementById("chat-input");
+
+  recognition.onstart = () => {
+    isListening = true;
+    btn.classList.add("listening");
+    btn.textContent = "⏺";
+    showToast("🎤 話してください...");
+  };
+  recognition.onresult = (e) => {
+    let transcript = "";
+    for (let i = 0; i < e.results.length; i++) {
+      transcript += e.results[i][0].transcript;
+    }
+    input.value = transcript;
+    input.style.height = "auto";
+    input.style.height = Math.min(120, input.scrollHeight) + "px";
+  };
+  recognition.onerror = (e) => {
+    console.warn("speech err:", e.error);
+    if (e.error === "not-allowed") showToast("マイクの使用が許可されていません");
+    else if (e.error !== "aborted") showToast("音声エラー: " + e.error);
+    stopVoiceInput();
+  };
+  recognition.onend = () => { stopVoiceInput(); };
+  try { recognition.start(); }
+  catch (e) { console.warn(e); stopVoiceInput(); }
+}
+
+function stopVoiceInput() {
+  isListening = false;
+  const btn = document.getElementById("voice-btn");
+  btn.classList.remove("listening");
+  btn.textContent = "🎤";
+}
+
+document.getElementById("voice-btn").onclick = () => {
+  if (isListening) {
+    try { recognition && recognition.stop(); } catch (e) {}
+    stopVoiceInput();
+  } else {
+    startVoiceInput();
+  }
+};
+
+function toggleTTS() {
+  ttsEnabled = !ttsEnabled;
+  const btn = document.getElementById("tts-toggle");
+  btn.textContent = ttsEnabled ? "🔊 読み上げ ON" : "🔊 読み上げ OFF";
+  btn.classList.toggle("on", ttsEnabled);
+  if (!ttsEnabled && window.speechSynthesis) window.speechSynthesis.cancel();
+}
+
+function speakAIResponse(text) {
+  if (!ttsEnabled || !window.speechSynthesis) return;
+  // Strip emojis/markdown for cleaner TTS
+  const clean = text.replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, "").replace(/\*\*/g, "").slice(0, 500);
+  try {
+    window.speechSynthesis.cancel();
+    const utter = new SpeechSynthesisUtterance(clean);
+    utter.lang = "ja-JP";
+    utter.rate = 1.05;
+    utter.pitch = 1.1;
+    window.speechSynthesis.speak(utter);
+  } catch (e) { console.warn("tts err:", e); }
+}
 
 document.getElementById("send-btn").onclick = sendMessage;
 document.getElementById("chat-input").addEventListener("keydown", e => {
@@ -1022,6 +1228,8 @@ async function sendMessage() {
     hideTyping();
     addMessage("ai", reply);
     saveSessionConversation();
+    // TTS: speak AI reply if enabled
+    speakAIResponse(reply);
     // Update progress meter (fire-and-forget, don't block)
     updateProgressMeter();
   } catch (e) {
@@ -1071,9 +1279,34 @@ async function updateProgressMeter() {
 function renderProgress(data) {
   const progress = data.progress || 0;
   const coverage = data.coverage || {};
-  document.getElementById("progress-fill").style.width = progress + "%";
-  document.getElementById("progress-label").textContent = `📊 取れ高: ${progress}%`;
+  const prev = state.lastProgress || 0;
+  const delta = progress - prev;
+
+  const fill = document.getElementById("progress-fill");
+  const label = document.getElementById("progress-label");
+  const bar = document.getElementById("progress-bar");
+
+  // Animate number count-up if progress changed
+  animateNumber(label, prev, progress, "📊 取れ高: ", "%");
+  fill.style.width = progress + "%";
   document.getElementById("progress-msg-count").textContent = `${data.risa_message_count || 0} 発言 / ${data.message_count || 0}`;
+
+  // Celebration effect if progress went up
+  if (delta >= 1) {
+    fill.classList.remove("shimmer");
+    void fill.offsetWidth; // force reflow
+    fill.classList.add("shimmer");
+    bar.classList.remove("celebrating");
+    void bar.offsetWidth;
+    bar.classList.add("celebrating");
+    label.classList.remove("pulsing");
+    void label.offsetWidth;
+    label.classList.add("pulsing");
+    spawnSparkles(bar, delta);
+    showDeltaBadge(bar, delta);
+  }
+
+  state.lastProgress = progress;
 
   const detail = document.getElementById("progress-detail");
   detail.innerHTML = Object.entries(CATEGORY_LABELS).map(([key, label]) => {
@@ -1084,6 +1317,44 @@ function renderProgress(data) {
       <span class="progress-item-score ${cls}">${score}/10</span>
     </div>`;
   }).join("");
+}
+
+function animateNumber(el, from, to, prefix, suffix) {
+  const start = performance.now();
+  const duration = 800;
+  function tick(now) {
+    const t = Math.min(1, (now - start) / duration);
+    // easeOutCubic
+    const eased = 1 - Math.pow(1 - t, 3);
+    const val = Math.round(from + (to - from) * eased);
+    el.textContent = `${prefix}${val}${suffix}`;
+    if (t < 1) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+
+function spawnSparkles(container, intensity) {
+  const count = Math.min(6, Math.max(3, Math.floor(intensity)));
+  const sparkleChars = ["✨", "🌸", "⭐", "💫", "💖"];
+  const rect = container.getBoundingClientRect();
+  for (let i = 0; i < count; i++) {
+    const sparkle = document.createElement("div");
+    sparkle.className = "sparkle";
+    sparkle.textContent = sparkleChars[Math.floor(Math.random() * sparkleChars.length)];
+    sparkle.style.left = (20 + Math.random() * (rect.width - 40)) + "px";
+    sparkle.style.bottom = (8 + Math.random() * 10) + "px";
+    sparkle.style.animationDelay = (i * 0.08) + "s";
+    container.appendChild(sparkle);
+    setTimeout(() => sparkle.remove(), 1500 + i * 80);
+  }
+}
+
+function showDeltaBadge(container, delta) {
+  const badge = document.createElement("div");
+  badge.className = "progress-increase-badge";
+  badge.textContent = `+${delta}% 🎉`;
+  container.appendChild(badge);
+  setTimeout(() => badge.remove(), 1600);
 }
 
 function toggleProgressDetail() {
