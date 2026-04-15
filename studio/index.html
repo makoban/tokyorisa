@@ -532,7 +532,7 @@
   <div class="dash-header">
     <img src="../assets/risa-icon.jpeg" alt="Risa">
     <div class="greeting">
-      <h1>Risa's Studio 🌸 <span class="version-badge">Ver 1.3</span></h1>
+      <h1>Risa's Studio 🌸 <span class="version-badge">Ver 1.4</span></h1>
       <p id="greeting-text">こんにちは Risaさん</p>
     </div>
   </div>
@@ -952,7 +952,7 @@ async function selectSeason(idx) {
 async function proceedToChat() {
   showScreen("screen-confirm");
   const container = document.getElementById("confirm-container");
-  container.innerHTML = `<div class="loading-card"><div class="loader"></div><p style="margin-top:14px; color:var(--accent2); font-weight:bold;">Alexが下調べ中...</p><p id="research-status" style="color:var(--muted); font-size:0.8em;">複数ソースを並列で調査中</p></div>`;
+  container.innerHTML = `<div class="loading-card"><div class="loader"></div><p style="margin-top:14px; color:var(--accent2); font-weight:bold;">サノイチが下調べ中...</p><p id="research-status" style="color:var(--muted); font-size:0.8em;">複数ソースを並列で調査中</p></div>`;
   await runResearchAndWait();
   await createSession();
   startChat();
@@ -1178,6 +1178,15 @@ document.getElementById("voice-btn").onclick = () => {
     stopVoiceInput();
   } else {
     startVoiceInput();
+    // First time using voice input → auto enable TTS for full voice conversation
+    if (!ttsEnabled && !state.ttsAutoEnabled) {
+      ttsEnabled = true;
+      state.ttsAutoEnabled = true;
+      const btn = document.getElementById("tts-toggle");
+      btn.textContent = "🔊 読み上げ ON";
+      btn.classList.add("on");
+      showToast("🔊 読み上げも自動でONにしました");
+    }
   }
 };
 
