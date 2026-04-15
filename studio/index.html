@@ -532,7 +532,7 @@
   <div class="dash-header">
     <img src="../assets/risa-icon.jpeg" alt="Risa">
     <div class="greeting">
-      <h1>Risa's Studio 🌸 <span class="version-badge">Ver 1.4</span></h1>
+      <h1>Risa's Studio 🌸 <span class="version-badge">Ver 1.5</span></h1>
       <p id="greeting-text">こんにちは Risaさん</p>
     </div>
   </div>
@@ -1198,16 +1198,65 @@ function toggleTTS() {
   if (!ttsEnabled && window.speechSynthesis) window.speechSynthesis.cancel();
 }
 
+let sanoichiVoice = null;
+let voicesLoaded = false;
+
+function pickSanoichiVoice() {
+  if (!window.speechSynthesis) return null;
+  const voices = window.speechSynthesis.getVoices();
+  if (!voices.length) return null;
+  const ja = voices.filter(v => v.lang.startsWith("ja"));
+  if (!ja.length) return null;
+  // Prefer male Japanese voices (names vary by OS)
+  // iOS: Otoya (male), Kyoko (female)
+  // Android: ja-JP-Wavenet-C / ja-JP-Wavenet-D (male)
+  // macOS: O-ren, Kyoko, Otoya
+  // Chrome: Google 日本語 (neutral)
+  const malePatterns = /otoya|ichiro|daichi|hiroshi|takumi|wavenet-c|wavenet-d|male|man/i;
+  const male = ja.find(v => malePatterns.test(v.name));
+  if (male) return male;
+  // Second choice: any non-female-sounding voice
+  const femalePatterns = /kyoko|haruka|nanami|mizuki|aya|misaki|female|woman/i;
+  const nonFemale = ja.find(v => !femalePatterns.test(v.name));
+  if (nonFemale) return nonFemale;
+  // Fall back to first Japanese voice (will pitch down)
+  return ja[0];
+}
+
+if (window.speechSynthesis) {
+  // Voices load asynchronously
+  window.speechSynthesis.onvoiceschanged = () => {
+    sanoichiVoice = pickSanoichiVoice();
+    voicesLoaded = true;
+  };
+  // Also try immediately (some browsers have them ready)
+  setTimeout(() => {
+    if (!voicesLoaded) {
+      sanoichiVoice = pickSanoichiVoice();
+      voicesLoaded = true;
+    }
+  }, 500);
+}
+
 function speakAIResponse(text) {
   if (!ttsEnabled || !window.speechSynthesis) return;
   // Strip emojis/markdown for cleaner TTS
-  const clean = text.replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, "").replace(/\*\*/g, "").slice(0, 500);
+  const clean = text
+    .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{1F1E0}-\u{1F1FF}]/gu, "")
+    .replace(/\*\*/g, "")
+    .replace(/\n+/g, "。")
+    .slice(0, 500);
   try {
     window.speechSynthesis.cancel();
     const utter = new SpeechSynthesisUtterance(clean);
     utter.lang = "ja-JP";
-    utter.rate = 1.05;
-    utter.pitch = 1.1;
+    // Sanoichi is imagined as a big male character: lower pitch, slightly slower, authoritative
+    utter.rate = 0.98;
+    utter.pitch = 0.75;   // lower pitch for masculine/large
+    utter.volume = 1.0;
+    // Select male voice if available
+    if (!sanoichiVoice) sanoichiVoice = pickSanoichiVoice();
+    if (sanoichiVoice) utter.voice = sanoichiVoice;
     window.speechSynthesis.speak(utter);
   } catch (e) { console.warn("tts err:", e); }
 }
