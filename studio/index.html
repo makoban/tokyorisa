@@ -532,7 +532,7 @@
   <div class="dash-header">
     <img src="../assets/risa-icon.jpeg" alt="Risa">
     <div class="greeting">
-      <h1>Risa's Studio 🌸 <span class="version-badge">Ver 1.9</span></h1>
+      <h1>Risa's Studio 🌸 <span class="version-badge">Ver 2.0</span></h1>
       <p id="greeting-text">こんにちは Risaさん</p>
     </div>
   </div>
@@ -1118,16 +1118,27 @@ function hideTyping() { const t = document.getElementById("typing-indicator"); i
 let recognition = null;
 let isListening = false;
 let ttsEnabled = false;
+let silenceTimer = null;
+let finalTranscript = "";
+const SILENCE_TIMEOUT_MS = 10000; // 10 seconds
 
 function initSpeechRecognition() {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR) return null;
   const rec = new SR();
   rec.lang = "ja-JP";
-  rec.continuous = false;
+  rec.continuous = true;       // Keep listening through pauses
   rec.interimResults = true;
   rec.maxAlternatives = 1;
   return rec;
+}
+
+function resetSilenceTimer() {
+  if (silenceTimer) clearTimeout(silenceTimer);
+  silenceTimer = setTimeout(() => {
+    showToast("⏱ 10秒間発言なし → マイク停止");
+    try { recognition && recognition.stop(); } catch (e) {}
+  }, SILENCE_TIMEOUT_MS);
 }
 
 function startVoiceInput() {
@@ -1140,25 +1151,38 @@ function startVoiceInput() {
   }
   const btn = document.getElementById("voice-btn");
   const input = document.getElementById("chat-input");
+  finalTranscript = input.value || "";
 
   recognition.onstart = () => {
     isListening = true;
     btn.classList.add("listening");
     btn.textContent = "⏺";
-    showToast("🎤 話してください...");
+    showToast("🎤 話してください (10秒静かで自動停止)");
+    resetSilenceTimer();
   };
   recognition.onresult = (e) => {
-    let transcript = "";
-    for (let i = 0; i < e.results.length; i++) {
-      transcript += e.results[i][0].transcript;
+    let interim = "";
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      const transcript = e.results[i][0].transcript;
+      if (e.results[i].isFinal) {
+        finalTranscript += transcript;
+      } else {
+        interim += transcript;
+      }
     }
-    input.value = transcript;
+    input.value = finalTranscript + interim;
     input.style.height = "auto";
     input.style.height = Math.min(120, input.scrollHeight) + "px";
+    // Reset silence timer whenever we hear anything
+    resetSilenceTimer();
   };
   recognition.onerror = (e) => {
     console.warn("speech err:", e.error);
     if (e.error === "not-allowed") showToast("マイクの使用が許可されていません");
+    else if (e.error === "no-speech") {
+      // no-speech is normal during silence with continuous mode - ignore
+      return;
+    }
     else if (e.error !== "aborted") showToast("音声エラー: " + e.error);
     stopVoiceInput();
   };
@@ -1169,6 +1193,7 @@ function startVoiceInput() {
 
 function stopVoiceInput() {
   isListening = false;
+  if (silenceTimer) { clearTimeout(silenceTimer); silenceTimer = null; }
   const btn = document.getElementById("voice-btn");
   btn.classList.remove("listening");
   btn.textContent = "🎤";
@@ -1200,12 +1225,13 @@ function toggleTTS() {
   if (!ttsEnabled && window.speechSynthesis) window.speechSynthesis.cancel();
 }
 
-// TTS speed cycle: 1.0x → 1.15x → 1.3x → 1.5x → 0.9x → 1.0x
-const TTS_SPEEDS = [1.0, 1.15, 1.3, 1.5, 0.9];
-let ttsSpeedIndex = parseInt(localStorage.getItem("ttsSpeedIndex") || "0", 10);
+// TTS speed cycle: default 1.5x, up to 2.0x
+const TTS_SPEEDS = [1.5, 1.75, 2.0, 0.9, 1.0, 1.25];
+let ttsSpeedIndex = parseInt(localStorage.getItem("ttsSpeedIdx2") || "0", 10);
+if (isNaN(ttsSpeedIndex) || ttsSpeedIndex < 0 || ttsSpeedIndex >= TTS_SPEEDS.length) ttsSpeedIndex = 0;
 function cycleTTSSpeed() {
   ttsSpeedIndex = (ttsSpeedIndex + 1) % TTS_SPEEDS.length;
-  localStorage.setItem("ttsSpeedIndex", String(ttsSpeedIndex));
+  localStorage.setItem("ttsSpeedIdx2", String(ttsSpeedIndex));
   const speed = TTS_SPEEDS[ttsSpeedIndex];
   const btn = document.getElementById("tts-speed");
   btn.textContent = `⏩ 速度 ${speed}x`;
