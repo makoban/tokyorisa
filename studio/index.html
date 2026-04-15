@@ -532,7 +532,7 @@
   <div class="dash-header">
     <img src="../assets/risa-icon.jpeg" alt="Risa">
     <div class="greeting">
-      <h1>Risa's Studio 🌸 <span class="version-badge">Ver 1.7</span></h1>
+      <h1>Risa's Studio 🌸 <span class="version-badge">Ver 1.8</span></h1>
       <p id="greeting-text">こんにちは Risaさん</p>
     </div>
   </div>
@@ -623,6 +623,8 @@
   </div>
   <div class="footer-tip">
     <button class="voice-toggle-tts" id="tts-toggle" onclick="toggleTTS()">🔊 読み上げ OFF</button>
+    &nbsp;
+    <button class="voice-toggle-tts" id="tts-speed" onclick="cycleTTSSpeed()">⏩ 速度 1.0x</button>
     &nbsp;&nbsp;疲れたら「記事化」で終了 🌸
   </div>
 </section>
@@ -1198,6 +1200,30 @@ function toggleTTS() {
   if (!ttsEnabled && window.speechSynthesis) window.speechSynthesis.cancel();
 }
 
+// TTS speed cycle: 1.0x → 1.15x → 1.3x → 1.5x → 0.9x → 1.0x
+const TTS_SPEEDS = [1.0, 1.15, 1.3, 1.5, 0.9];
+let ttsSpeedIndex = parseInt(localStorage.getItem("ttsSpeedIndex") || "0", 10);
+function cycleTTSSpeed() {
+  ttsSpeedIndex = (ttsSpeedIndex + 1) % TTS_SPEEDS.length;
+  localStorage.setItem("ttsSpeedIndex", String(ttsSpeedIndex));
+  const speed = TTS_SPEEDS[ttsSpeedIndex];
+  const btn = document.getElementById("tts-speed");
+  btn.textContent = `⏩ 速度 ${speed}x`;
+  btn.classList.toggle("on", speed !== 1.0);
+  showToast(`サノイチの声の速度: ${speed}x`);
+  // Stop current playback if any
+  if (currentAudio) { try { currentAudio.pause(); } catch(e){} currentAudio = null; }
+}
+// Initialize speed button from saved preference
+(function initTTSSpeed() {
+  const btn = document.getElementById("tts-speed");
+  if (!btn) return;
+  const speed = TTS_SPEEDS[ttsSpeedIndex];
+  btn.textContent = `⏩ 速度 ${speed}x`;
+  btn.classList.toggle("on", speed !== 1.0);
+})();
+function getTTSSpeed() { return TTS_SPEEDS[ttsSpeedIndex]; }
+
 let sanoichiVoice = null;
 let voicesLoaded = false;
 
@@ -1255,7 +1281,7 @@ async function speakAIResponse(text) {
         text: text,
         voice: "ja-JP-Neural2-D",  // Deep male voice
         pitch: -4.0,
-        rate: 1.0
+        rate: getTTSSpeed()
       })
     });
     const data = await res.json();
@@ -1287,7 +1313,7 @@ function speakAIResponseBrowserFallback(text) {
     window.speechSynthesis.cancel();
     const utter = new SpeechSynthesisUtterance(clean);
     utter.lang = "ja-JP";
-    utter.rate = 0.98;
+    utter.rate = getTTSSpeed();
     utter.pitch = 0.75;
     utter.volume = 1.0;
     if (!sanoichiVoice) sanoichiVoice = pickSanoichiVoice();
