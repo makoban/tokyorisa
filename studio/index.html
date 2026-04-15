@@ -46,6 +46,19 @@
     -webkit-background-clip: text; background-clip: text;
     -webkit-text-fill-color: transparent;
     margin-bottom: 2px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .version-badge {
+    font-size: 0.55em;
+    padding: 3px 10px;
+    border-radius: 12px;
+    background: rgba(255, 211, 105, 0.12);
+    border: 1px solid var(--gold);
+    color: var(--gold);
+    -webkit-text-fill-color: var(--gold);
+    font-weight: normal;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
   }
   .dash-header p { color: var(--muted); font-size: 0.85em; }
 
@@ -383,7 +396,7 @@
   <div class="dash-header">
     <img src="../assets/risa-icon.jpeg" alt="Risa">
     <div class="greeting">
-      <h1>Risa's Studio 🌸</h1>
+      <h1>Risa's Studio 🌸 <span class="version-badge">Ver 1.0</span></h1>
       <p id="greeting-text">こんにちは Risaさん</p>
     </div>
   </div>
