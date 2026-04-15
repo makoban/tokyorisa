@@ -578,7 +578,7 @@
   <div class="dash-header">
     <img src="../assets/risa-icon.jpeg" alt="Risa">
     <div class="greeting">
-      <h1>Risa's Studio 🌸 <span class="version-badge">Ver 2.2</span></h1>
+      <h1>Risa's Studio 🌸 <span class="version-badge">Ver 2.2.1</span></h1>
       <p id="greeting-text">こんにちは Risaさん</p>
     </div>
   </div>
@@ -755,6 +755,7 @@ function setPersona(key) {
   if (!PERSONAS[key]) return;
   localStorage.setItem("risa_persona", key);
   applyPersonaUI();
+  if (typeof reloadTTSSpeedForPersona === "function") reloadTTSSpeedForPersona();
   showToast(`AI記者を ${PERSONAS[key].name} に切替えました 🌸`);
 }
 function applyPersonaUI() {
@@ -1339,29 +1340,43 @@ function toggleTTS() {
   if (!ttsEnabled && window.speechSynthesis) window.speechSynthesis.cancel();
 }
 
-// TTS speed cycle: default 1.5x, up to 2.0x
-const TTS_SPEEDS = [1.5, 1.75, 2.0, 0.9, 1.0, 1.25];
-let ttsSpeedIndex = parseInt(localStorage.getItem("ttsSpeedIdx2") || "0", 10);
-if (isNaN(ttsSpeedIndex) || ttsSpeedIndex < 0 || ttsSpeedIndex >= TTS_SPEEDS.length) ttsSpeedIndex = 0;
-function cycleTTSSpeed() {
-  ttsSpeedIndex = (ttsSpeedIndex + 1) % TTS_SPEEDS.length;
-  localStorage.setItem("ttsSpeedIdx2", String(ttsSpeedIndex));
-  const speed = TTS_SPEEDS[ttsSpeedIndex];
-  const btn = document.getElementById("tts-speed");
-  btn.textContent = `⏩ 速度 ${speed}x`;
-  btn.classList.toggle("on", speed !== 1.0);
-  showToast(`${getPersona().name}の声の速度: ${speed}x`);
-  // Stop current playback if any
-  if (currentAudio) { try { currentAudio.pause(); } catch(e){} currentAudio = null; }
+// TTS speed cycle — persona別のデフォルト。速すぎるとNeural2は機械っぽくなる。
+const TTS_SPEEDS = [0.9, 1.0, 1.25, 1.5, 1.75, 2.0];
+// Persona別デフォルト速度(index in TTS_SPEEDS)
+const PERSONA_DEFAULT_SPEED_IDX = {
+  sanoichi: 3, // 1.5x (低音男性声は速くても耐える)
+  hanako:   2, // 1.25x (女性高音は速くすると硬くなる)
+};
+function speedStorageKey() { return `ttsSpeedIdx_${getPersonaKey()}`; }
+function loadTTSSpeedIndex() {
+  const raw = localStorage.getItem(speedStorageKey());
+  const parsed = parseInt(raw, 10);
+  if (!isNaN(parsed) && parsed >= 0 && parsed < TTS_SPEEDS.length) return parsed;
+  return PERSONA_DEFAULT_SPEED_IDX[getPersonaKey()] ?? 3;
 }
-// Initialize speed button from saved preference
-(function initTTSSpeed() {
+let ttsSpeedIndex = loadTTSSpeedIndex();
+function refreshTTSSpeedButton() {
   const btn = document.getElementById("tts-speed");
   if (!btn) return;
   const speed = TTS_SPEEDS[ttsSpeedIndex];
   btn.textContent = `⏩ 速度 ${speed}x`;
   btn.classList.toggle("on", speed !== 1.0);
-})();
+}
+function cycleTTSSpeed() {
+  ttsSpeedIndex = (ttsSpeedIndex + 1) % TTS_SPEEDS.length;
+  localStorage.setItem(speedStorageKey(), String(ttsSpeedIndex));
+  const speed = TTS_SPEEDS[ttsSpeedIndex];
+  refreshTTSSpeedButton();
+  showToast(`${getPersona().name}の声の速度: ${speed}x`);
+  // Stop current playback if any
+  if (currentAudio) { try { currentAudio.pause(); } catch(e){} currentAudio = null; }
+}
+// persona切替時にそのpersona用の速度を読み直す
+function reloadTTSSpeedForPersona() {
+  ttsSpeedIndex = loadTTSSpeedIndex();
+  refreshTTSSpeedButton();
+}
+(function initTTSSpeed() { refreshTTSSpeedButton(); })();
 function getTTSSpeed() { return TTS_SPEEDS[ttsSpeedIndex]; }
 
 let sanoichiVoice = null;
