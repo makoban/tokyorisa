@@ -75,6 +75,52 @@
   }
   .new-chat-btn:active { transform: scale(0.98); }
 
+  /* ========== Persona selector ========== */
+  .persona-selector {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 14px 12px;
+    margin-bottom: 20px;
+  }
+  .persona-label {
+    font-size: 0.82em;
+    color: var(--accent2);
+    margin-bottom: 10px;
+    font-weight: bold;
+    letter-spacing: 0.03em;
+  }
+  .persona-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .persona-btn {
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    padding: 12px 8px;
+    background: rgba(255,255,255,0.02);
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    color: var(--text);
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.18s;
+  }
+  .persona-btn:active { transform: scale(0.96); }
+  .persona-btn .persona-icon { font-size: 1.6em; line-height: 1; }
+  .persona-btn .persona-name { font-size: 0.95em; font-weight: bold; color: var(--gold); }
+  .persona-btn .persona-desc { font-size: 0.72em; color: var(--muted); }
+  .persona-btn.active {
+    background: linear-gradient(135deg, rgba(255,110,199,0.18), rgba(110,224,255,0.12));
+    border-color: var(--accent);
+    box-shadow: 0 0 18px rgba(255,110,199,0.25);
+  }
+  .persona-btn.active .persona-name {
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
   .history-section-title {
     display: flex; justify-content: space-between; align-items: center;
     margin: 8px 0 12px; color: var(--accent2); font-size: 0.95em;
@@ -532,7 +578,7 @@
   <div class="dash-header">
     <img src="../assets/risa-icon.jpeg" alt="Risa">
     <div class="greeting">
-      <h1>Risa's Studio 🌸 <span class="version-badge">Ver 2.1</span></h1>
+      <h1>Risa's Studio 🌸 <span class="version-badge">Ver 2.2</span></h1>
       <p id="greeting-text">こんにちは Risaさん</p>
     </div>
   </div>
@@ -540,6 +586,22 @@
   <button class="new-chat-btn" onclick="goToNewChat()">
     ✨ 新しい会話を始める
   </button>
+
+  <div class="persona-selector">
+    <div class="persona-label">🎤 取材するAI記者を選ぶ</div>
+    <div class="persona-options">
+      <button type="button" class="persona-btn" data-persona="sanoichi" onclick="setPersona('sanoichi')">
+        <span class="persona-icon">👨</span>
+        <span class="persona-name">サノイチ</span>
+        <span class="persona-desc">分析型・男性</span>
+      </button>
+      <button type="button" class="persona-btn" data-persona="hanako" onclick="setPersona('hanako')">
+        <span class="persona-icon">👩</span>
+        <span class="persona-name">ハナコ</span>
+        <span class="persona-desc">共感型・女性</span>
+      </button>
+    </div>
+  </div>
 
   <div class="history-section-title">
     <span>📚 過去の会話</span>
@@ -667,6 +729,41 @@
 <script>
 const API_BASE = "https://risa-studio-api.ai-fudosan.workers.dev";
 
+// ============================================================
+// PERSONA (AI記者キャラ切替)
+// ============================================================
+const PERSONAS = {
+  sanoichi: {
+    key: "sanoichi",
+    name: "サノイチ",
+    label: "AI記者「サノイチ」",
+    researchLabel: "サノイチが下調べ中...",
+  },
+  hanako: {
+    key: "hanako",
+    name: "ハナコ",
+    label: "AI記者「ハナコ」",
+    researchLabel: "ハナコが下調べ中...",
+  },
+};
+function getPersonaKey() {
+  const k = localStorage.getItem("risa_persona");
+  return PERSONAS[k] ? k : "sanoichi";
+}
+function getPersona() { return PERSONAS[getPersonaKey()]; }
+function setPersona(key) {
+  if (!PERSONAS[key]) return;
+  localStorage.setItem("risa_persona", key);
+  applyPersonaUI();
+  showToast(`AI記者を ${PERSONAS[key].name} に切替えました 🌸`);
+}
+function applyPersonaUI() {
+  const key = getPersonaKey();
+  document.querySelectorAll(".persona-btn").forEach(b => {
+    b.classList.toggle("active", b.dataset.persona === key);
+  });
+}
+
 const state = {
   topic: null,
   workInfo: null,
@@ -702,6 +799,7 @@ function goToNewChat() {
 // DASHBOARD
 // ============================================================
 async function loadDashboard() {
+  applyPersonaUI();
   document.getElementById("dashboard-loading").style.display = "block";
   document.getElementById("dashboard-history").innerHTML = "";
   try {
@@ -954,7 +1052,7 @@ async function selectSeason(idx) {
 async function proceedToChat() {
   showScreen("screen-confirm");
   const container = document.getElementById("confirm-container");
-  container.innerHTML = `<div class="loading-card"><div class="loader"></div><p style="margin-top:14px; color:var(--accent2); font-weight:bold;">サノイチが下調べ中...</p><p id="research-status" style="color:var(--muted); font-size:0.8em;">複数ソースを並列で調査中</p></div>`;
+  container.innerHTML = `<div class="loading-card"><div class="loader"></div><p style="margin-top:14px; color:var(--accent2); font-weight:bold;">${getPersona().researchLabel}</p><p id="research-status" style="color:var(--muted); font-size:0.8em;">複数ソースを並列で調査中</p></div>`;
   await runResearchAndWait();
   await createSession();
   startChat();
@@ -1061,11 +1159,12 @@ function startChat() {
     state.conversation = [];
     document.getElementById("messages").innerHTML = "";
     const hook = extractGoodHook(state.briefing);
+    const pName = getPersona().name;
     let firstMsg;
     if (hook) {
-      firstMsg = `こんにちは、AI記者の「サノイチ」です🌸\n\n今日は『${topicLabel}』について Risaさんとお話したいです!\n\n下調べしてきたんですが、「${hook}」という話があって面白いなと思ったんです。\n\nRisaさん的にはこの辺、実際に観てみてどう感じました?`;
+      firstMsg = `こんにちは、AI記者の「${pName}」です🌸\n\n今日は『${topicLabel}』について Risaさんとお話したいです!\n\n下調べしてきたんですが、「${hook}」という話があって面白いなと思ったんです。\n\nRisaさん的にはこの辺、実際に観てみてどう感じました?`;
     } else {
-      firstMsg = `こんにちは、AI記者の「サノイチ」です🌸\n\n今日は『${topicLabel}』について Risaさんとお話したいです!${info.year ? info.year + "年の" : ""}${info.studio ? info.studio + "制作" : ""}なんですね。\n\n正直なところ、私の事前調査だと情報があまり拾えなかったので、今日はRisaさんに色々教えてもらえると嬉しいです。\n\nまず、この作品でRisaさんが一番印象的だったシーンや瞬間って、どこでした?`;
+      firstMsg = `こんにちは、AI記者の「${pName}」です🌸\n\n今日は『${topicLabel}』について Risaさんとお話したいです!${info.year ? info.year + "年の" : ""}${info.studio ? info.studio + "制作" : ""}なんですね。\n\n正直なところ、私の事前調査だと情報があまり拾えなかったので、今日はRisaさんに色々教えてもらえると嬉しいです。\n\nまず、この作品でRisaさんが一番印象的だったシーンや瞬間って、どこでした?`;
     }
     addMessage("ai", firstMsg);
     // Reset progress meter for fresh chat
@@ -1251,7 +1350,7 @@ function cycleTTSSpeed() {
   const btn = document.getElementById("tts-speed");
   btn.textContent = `⏩ 速度 ${speed}x`;
   btn.classList.toggle("on", speed !== 1.0);
-  showToast(`サノイチの声の速度: ${speed}x`);
+  showToast(`${getPersona().name}の声の速度: ${speed}x`);
   // Stop current playback if any
   if (currentAudio) { try { currentAudio.pause(); } catch(e){} currentAudio = null; }
 }
@@ -1314,15 +1413,15 @@ async function speakAIResponse(text) {
   if (window.speechSynthesis) { try { window.speechSynthesis.cancel(); } catch(e){} }
 
   // Try Google Cloud Neural2 TTS first (via Worker)
+  // voice/pitch are persona-driven on the worker side; we just send rate + persona key
   try {
     const res = await fetch(`${API_BASE}/api/tts`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         text: text,
-        voice: "ja-JP-Neural2-D",  // Deep male voice
-        pitch: -4.0,
-        rate: getTTSSpeed()
+        rate: getTTSSpeed(),
+        persona: getPersonaKey()
       })
     });
     const data = await res.json();
@@ -1438,7 +1537,8 @@ async function updateProgressMeter() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         conversation: state.conversation,
-        workInfo: state.workInfo
+        workInfo: state.workInfo,
+        persona: getPersonaKey()
       })
     });
     const data = await res.json();
@@ -1540,7 +1640,8 @@ async function callGeminiChat() {
       workInfo: state.workInfo,
       selectedSeason: state.selectedSeason,
       briefing: state.briefing,
-      conversation: state.conversation
+      conversation: state.conversation,
+      persona: getPersonaKey()
     })
   });
   const data = await res.json();
@@ -1615,7 +1716,8 @@ async function generateArticle() {
     body: JSON.stringify({
       workInfo: state.workInfo,
       selectedSeason: state.selectedSeason,
-      conversation: state.conversation
+      conversation: state.conversation,
+      persona: getPersonaKey()
     })
   });
   const data = await res.json();
