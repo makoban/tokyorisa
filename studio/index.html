@@ -532,7 +532,7 @@
   <div class="dash-header">
     <img src="../assets/risa-icon.jpeg" alt="Risa">
     <div class="greeting">
-      <h1>Risa's Studio 🌸 <span class="version-badge">Ver 1.5</span></h1>
+      <h1>Risa's Studio 🌸 <span class="version-badge">Ver 1.6</span></h1>
       <p id="greeting-text">こんにちは Risaさん</p>
     </div>
   </div>
@@ -1238,9 +1238,46 @@ if (window.speechSynthesis) {
   }, 500);
 }
 
-function speakAIResponse(text) {
-  if (!ttsEnabled || !window.speechSynthesis) return;
-  // Strip emojis/markdown for cleaner TTS
+let currentAudio = null;
+
+async function speakAIResponse(text) {
+  if (!ttsEnabled) return;
+  // Stop any ongoing audio
+  if (currentAudio) { try { currentAudio.pause(); } catch(e){} currentAudio = null; }
+  if (window.speechSynthesis) { try { window.speechSynthesis.cancel(); } catch(e){} }
+
+  // Try Google Cloud Neural2 TTS first (via Worker)
+  try {
+    const res = await fetch(`${API_BASE}/api/tts`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        text: text,
+        voice: "ja-JP-Neural2-D",  // Deep male voice
+        pitch: -4.0,
+        rate: 1.0
+      })
+    });
+    const data = await res.json();
+    if (data.error || !data.audio) {
+      console.warn("Google TTS failed:", data.error);
+      speakAIResponseBrowserFallback(text);
+      return;
+    }
+    // Play base64 MP3
+    currentAudio = new Audio("data:audio/mp3;base64," + data.audio);
+    currentAudio.play().catch(e => {
+      console.warn("audio play failed:", e);
+      speakAIResponseBrowserFallback(text);
+    });
+  } catch (e) {
+    console.warn("TTS request failed:", e);
+    speakAIResponseBrowserFallback(text);
+  }
+}
+
+function speakAIResponseBrowserFallback(text) {
+  if (!window.speechSynthesis) return;
   const clean = text
     .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{1F1E0}-\u{1F1FF}]/gu, "")
     .replace(/\*\*/g, "")
@@ -1250,15 +1287,13 @@ function speakAIResponse(text) {
     window.speechSynthesis.cancel();
     const utter = new SpeechSynthesisUtterance(clean);
     utter.lang = "ja-JP";
-    // Sanoichi is imagined as a big male character: lower pitch, slightly slower, authoritative
     utter.rate = 0.98;
-    utter.pitch = 0.75;   // lower pitch for masculine/large
+    utter.pitch = 0.75;
     utter.volume = 1.0;
-    // Select male voice if available
     if (!sanoichiVoice) sanoichiVoice = pickSanoichiVoice();
     if (sanoichiVoice) utter.voice = sanoichiVoice;
     window.speechSynthesis.speak(utter);
-  } catch (e) { console.warn("tts err:", e); }
+  } catch (e) { console.warn("fallback tts err:", e); }
 }
 
 document.getElementById("send-btn").onclick = sendMessage;
