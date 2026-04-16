@@ -711,7 +711,7 @@
   <div class="dash-header">
     <img src="../assets/risa-icon.jpeg" alt="Risa">
     <div class="greeting">
-      <h1>Risa's Studio 🌸 <span class="version-badge">Ver 2.4.3</span></h1>
+      <h1>Risa's Studio 🌸 <span class="version-badge">Ver 2.4.4</span></h1>
       <p id="greeting-text">こんにちは Risaさん</p>
     </div>
   </div>
@@ -948,9 +948,8 @@ function setResponseMode(mode) {
   localStorage.setItem("risa_resp_mode", mode);
   applyResponseModeUI();
   // If switching away from voice_text, stop any in-flight audio
-  if (mode === "text_only" && currentAudio) {
-    try { currentAudio.pause(); } catch(e) {}
-    if (currentAudio._blobUrl) URL.revokeObjectURL(currentAudio._blobUrl);
+  if (mode === "text_only") {
+    stopCurrentAudio();
     currentAudio = null;
   }
   showToast(mode === "voice_text" ? "🔊 音声+文字で返答します" : "📝 文字だけで返答します");
@@ -990,7 +989,10 @@ function isTTSEnabled() { return getResponseMode() === "voice_text"; }
 // AUDIO TEST (debug buttons on dashboard)
 // ============================================================
 async function runAudioTest(kind) {
-  unlockAudioOnce();
+  // CRITICAL: await the unlock synchronously within the gesture so the
+  // shared audio element is truly decoded-ready before we fetch.
+  await unlockAudioOnce();
+
   const btn = document.querySelector(`.audio-test-btn[data-test="${kind}"]`);
   const status = btn?.querySelector(".audio-test-status");
   if (!btn || !status) return;
@@ -1000,15 +1002,12 @@ async function runAudioTest(kind) {
 
   const SAMPLE_TEXT = "こんにちは、音声テストです。1、2、3。聞こえていますか?";
 
-  // Decide request params
   let body;
   if (kind === "sanoichi") {
     body = { text: SAMPLE_TEXT, rate: 1.25, persona: "sanoichi" };
   } else if (kind === "hanako-neural2") {
-    // Force Google Neural2 even for hanako
     body = { text: SAMPLE_TEXT, rate: 1.25, persona: "hanako", prefer_google: true };
   } else if (kind === "hanako-gemini") {
-    // Explicitly ask for Gemini (disable iOS auto-fallback)
     body = { text: SAMPLE_TEXT, rate: 1.0, persona: "hanako", prefer_google: false };
   } else return;
 
@@ -1028,24 +1027,29 @@ async function runAudioTest(kind) {
     status.textContent = `再生中... (${data.engine || "?"})`;
 
     const mime = data.mime || "audio/mp3";
-    const blobUrl = base64ToBlobUrl(data.audio, mime);
-    const audio = new Audio(blobUrl);
-    audio.onended = () => {
-      URL.revokeObjectURL(blobUrl);
+    const el = ensureTTSAudioEl();
+    // Install one-shot handlers for this test
+    const onEnded = () => {
+      el.removeEventListener("ended", onEnded);
+      el.removeEventListener("error", onError);
       btn.className = "audio-test-btn ok";
       status.textContent = `✅ OK (${data.engine}, ${mime.split("/")[1]})`;
     };
-    audio.onerror = (ev) => {
-      URL.revokeObjectURL(blobUrl);
+    const onError = () => {
+      el.removeEventListener("ended", onEnded);
+      el.removeEventListener("error", onError);
       btn.className = "audio-test-btn ng";
       status.textContent = `❌ play error`;
       showToast(`再生エラー: audio element`);
     };
+    el.addEventListener("ended", onEnded);
+    el.addEventListener("error", onError);
+
     try {
-      await audio.play();
-      // After play starts, confirm it's actually producing output — onended will finalize
+      await playAudioBase64(data.audio, mime);
     } catch (e) {
-      URL.revokeObjectURL(blobUrl);
+      el.removeEventListener("ended", onEnded);
+      el.removeEventListener("error", onError);
       btn.className = "audio-test-btn ng";
       status.textContent = `❌ ${String(e.message || e).slice(0, 30)}`;
       showToast(`再生ブロック: ${e.message || e}`);
@@ -1539,7 +1543,8 @@ function resetSilenceTimer() {
 
 function startVoiceInput() {
   // Stop any AI speech/audio first (mic + speaker conflict on mobile)
-  if (currentAudio) { try { currentAudio.pause(); currentAudio.currentTime = 0; } catch(e){} currentAudio = null; }
+  stopCurrentAudio();
+  currentAudio = null;
   if (window.speechSynthesis) { try { window.speechSynthesis.cancel(); } catch(e){} }
 
   // Stop and discard any existing recognition instance (reuse causes issues)
@@ -1610,8 +1615,8 @@ function stopVoiceInput() {
   }
 }
 
-document.getElementById("voice-btn").onclick = () => {
-  unlockAudioOnce();
+document.getElementById("voice-btn").onclick = async () => {
+  await unlockAudioOnce();
   if (isListening) {
     try { recognition && recognition.stop(); } catch (e) {}
     stopVoiceInput();
@@ -1655,7 +1660,8 @@ function cycleTTSSpeed() {
   refreshTTSSpeedButton();
   showToast(`${getPersona().name}の声の速度: ${speed}x`);
   // Stop current playback if any
-  if (currentAudio) { try { currentAudio.pause(); } catch(e){} currentAudio = null; }
+  stopCurrentAudio();
+  currentAudio = null;
 }
 // persona切替時にそのpersona用の速度を読み直す
 function reloadTTSSpeedForPersona() {
@@ -1736,34 +1742,84 @@ function base64ToBlobUrl(base64, mime) {
 const IS_IOS = /iPhone|iPad|iPod/i.test(navigator.userAgent) ||
   (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1); // iPadOS 13+
 
-// iOS requires a synchronous play() during a user gesture to unlock audio.
-// After unlock, subsequent play() calls (even after async work) are allowed.
-let audioUnlocked = false;
-function unlockAudioOnce() {
-  if (audioUnlocked) return;
-  audioUnlocked = true;
+// ============================================================
+// SHARED TTS AUDIO ELEMENT (iOS-safe unlock pattern)
+// ============================================================
+// iOS Safari rule: once an Audio element has successfully play()ed during a
+// user gesture, subsequent play() calls on THAT SAME element are allowed even
+// after async work (fetch, await). So we keep ONE audio element and reuse it.
+// Tiny silent WAV — 44-byte header + 2 zero samples
+const SILENT_WAV =
+  "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAIlYAAESsAAACABAAZGF0YQAAAAA=";
+
+let ttsAudioEl = null;
+let ttsAudioUnlocked = false;
+
+function ensureTTSAudioEl() {
+  if (!ttsAudioEl) {
+    ttsAudioEl = new Audio();
+    ttsAudioEl.preload = "auto";
+    ttsAudioEl.playsInline = true; // iOS: prevent fullscreen hijack
+  }
+  return ttsAudioEl;
+}
+
+// Must be called synchronously during a user gesture. Awaits until the
+// silent primer successfully plays so the element is truly unlocked.
+async function unlockAudioOnce() {
+  if (ttsAudioUnlocked) return true;
+  const el = ensureTTSAudioEl();
+  el.src = SILENT_WAV;
+  el.volume = 0;
   try {
-    // Tiny silent WAV (44-byte header + 2 zero samples)
-    const silent = new Audio(
-      "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAIlYAAESsAAACABAAZGF0YQAAAAA="
-    );
-    silent.volume = 0;
-    const p = silent.play();
-    if (p && p.then) p.then(() => { try { silent.pause(); } catch(e){} }).catch(() => {});
-  } catch (e) { /* ignore */ }
+    await el.play();
+    try { el.pause(); } catch(e) {}
+    try { el.currentTime = 0; } catch(e) {}
+    el.volume = 1;
+    ttsAudioUnlocked = true;
+    return true;
+  } catch (e) {
+    console.warn("TTS unlock failed:", e);
+    return false;
+  }
+}
+
+// Play base64-encoded audio (MP3 or WAV) on the shared, unlocked element.
+async function playAudioBase64(base64, mime) {
+  const el = ensureTTSAudioEl();
+  // Revoke any previous blob URL to avoid leaks
+  if (el._blobUrl) {
+    try { URL.revokeObjectURL(el._blobUrl); } catch(e) {}
+    el._blobUrl = null;
+  }
+  const blobUrl = base64ToBlobUrl(base64, mime);
+  el._blobUrl = blobUrl;
+  el.src = blobUrl;
+  el.volume = 1;
+  try { el.currentTime = 0; } catch(e) {}
+  return el.play();
+}
+
+function stopCurrentAudio() {
+  if (!ttsAudioEl) return;
+  try { ttsAudioEl.pause(); } catch(e) {}
+  if (ttsAudioEl._blobUrl) {
+    try { URL.revokeObjectURL(ttsAudioEl._blobUrl); } catch(e) {}
+    ttsAudioEl._blobUrl = null;
+  }
 }
 
 async function speakAIResponse(text) {
   if (!isTTSEnabled()) return;
-  // Stop any ongoing audio
-  if (currentAudio) {
-    try { currentAudio.pause(); } catch(e){}
-    if (currentAudio._blobUrl) URL.revokeObjectURL(currentAudio._blobUrl);
-    currentAudio = null;
-  }
+  // Stop any in-flight playback on the shared element
+  stopCurrentAudio();
+  currentAudio = null;
   if (window.speechSynthesis) { try { window.speechSynthesis.cancel(); } catch(e){} }
 
   // Worker-side TTS (provider chosen per persona: google-neural2 or gemini-tts)
+  // iOS: we NO LONGER force prefer_google. The shared-element + silent-primer
+  // approach unlocks WAV decoding so Gemini plays reliably after the first
+  // successful unlock (done on send/mic tap before fetch completes).
   try {
     const res = await fetch(`${API_BASE}/api/tts`, {
       method: "POST",
@@ -1771,9 +1827,7 @@ async function speakAIResponse(text) {
       body: JSON.stringify({
         text: text,
         rate: getTTSSpeed(),
-        persona: getPersonaKey(),
-        // iPhone では Gemini の WAV 再生が不安定なので Google Neural2 を強制
-        prefer_google: IS_IOS
+        persona: getPersonaKey()
       })
     });
     const data = await res.json();
@@ -1787,36 +1841,37 @@ async function speakAIResponse(text) {
     showFallbackNotice(!!data.fallback, data.fallback_reason);
 
     const mime = data.mime || "audio/mp3";
-    // Use Blob URL (not data: URL) — required for iOS Safari with large WAV payloads
-    const blobUrl = base64ToBlobUrl(data.audio, mime);
-    currentAudio = new Audio(blobUrl);
-    currentAudio._blobUrl = blobUrl;
+    const el = ensureTTSAudioEl();
 
-    const cleanup = () => {
-      if (currentAudio && currentAudio._blobUrl) {
-        URL.revokeObjectURL(currentAudio._blobUrl);
-      }
+    const onEnded = () => {
+      el.removeEventListener("ended", onEnded);
+      el.removeEventListener("error", onError);
       currentAudio = null;
     };
-    currentAudio.onended = cleanup;
-    currentAudio.onerror = (ev) => {
+    const onError = (ev) => {
       console.warn("audio element error:", ev);
-      cleanup();
+      el.removeEventListener("ended", onEnded);
+      el.removeEventListener("error", onError);
+      currentAudio = null;
     };
+    el.addEventListener("ended", onEnded);
+    el.addEventListener("error", onError);
 
     try {
-      await currentAudio.play();
-      // Set playbackRate AFTER play() — iOS Safari ignores pre-play rate changes
-      // and misbehaves with extreme rates. Clamp to safe range on iOS.
+      await playAudioBase64(data.audio, mime);
+      currentAudio = el;
+      // Set playbackRate AFTER play() — iOS ignores pre-play rate changes.
       if (data.engine === "gemini-tts") {
         const raw = getTTSSpeed();
         const rate = IS_IOS ? Math.min(1.5, Math.max(1.0, raw)) : raw;
-        try { currentAudio.playbackRate = rate; } catch(e) { console.warn("playbackRate err:", e); }
+        try { el.playbackRate = rate; } catch(e) { console.warn("playbackRate err:", e); }
       }
     } catch (e) {
       console.warn("audio play failed:", e);
       showToast(`⚠️ 音声再生ブロック: ${String(e.message || e).slice(0, 60)}`);
-      cleanup();
+      el.removeEventListener("ended", onEnded);
+      el.removeEventListener("error", onError);
+      currentAudio = null;
       speakAIResponseBrowserFallback(text);
     }
   } catch (e) {
@@ -1859,7 +1914,7 @@ function autoGrow() {
 function isMobile() { return /iPhone|iPad|Android/i.test(navigator.userAgent); }
 
 async function sendMessage() {
-  unlockAudioOnce();
+  await unlockAudioOnce();
   const input = document.getElementById("chat-input");
   const text = input.value.trim();
   if (!text || state.isGenerating) return;
