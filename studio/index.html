@@ -661,7 +661,7 @@
   <div class="dash-header">
     <img src="../assets/risa-icon.jpeg" alt="Risa">
     <div class="greeting">
-      <h1>Risa's Studio 🌸 <span class="version-badge">Ver 2.4.1</span></h1>
+      <h1>Risa's Studio 🌸 <span class="version-badge">Ver 2.4.2</span></h1>
       <p id="greeting-text">こんにちは Risaさん</p>
     </div>
   </div>
@@ -875,11 +875,13 @@ function getInputMode() {
 }
 function setResponseMode(mode) {
   if (mode !== "voice_text" && mode !== "text_only") return;
+  unlockAudioOnce(); // user-gesture: safe to unlock iOS audio here
   localStorage.setItem("risa_resp_mode", mode);
   applyResponseModeUI();
   // If switching away from voice_text, stop any in-flight audio
   if (mode === "text_only" && currentAudio) {
     try { currentAudio.pause(); } catch(e) {}
+    if (currentAudio._blobUrl) URL.revokeObjectURL(currentAudio._blobUrl);
     currentAudio = null;
   }
   showToast(mode === "voice_text" ? "🔊 音声+文字で返答します" : "📝 文字だけで返答します");
@@ -1469,11 +1471,16 @@ function stopVoiceInput() {
 }
 
 document.getElementById("voice-btn").onclick = () => {
+  unlockAudioOnce();
   if (isListening) {
     try { recognition && recognition.stop(); } catch (e) {}
     stopVoiceInput();
   } else {
     startVoiceInput();
+    // Mic implies full voice conversation → force response mode to voice+text
+    if (getResponseMode() !== "voice_text") {
+      setResponseMode("voice_text");
+    }
     // First time pressing mic → also switch input mode to voice if not already
     if (getInputMode() !== "voice") setInputMode("voice");
   }
@@ -1564,7 +1571,11 @@ function showFallbackNotice(show, reason) {
   const el = document.getElementById("fallback-notice");
   if (!el) return;
   if (show) {
-    el.textContent = "⚠️ 最新AI音声が不安定なので旧音声に切替中" + (reason ? ` (${reason.slice(0, 40)})` : "");
+    if (IS_IOS && getPersonaKey() === "hanako") {
+      el.textContent = "ℹ️ iPhoneでは旧音声エンジンで再生中(最新AI音声は準備中)";
+    } else {
+      el.textContent = "⚠️ 最新AI音声が不安定なので旧音声に切替中" + (reason ? ` (${reason.slice(0, 40)})` : "");
+    }
     el.classList.add("show");
   } else {
     el.classList.remove("show");
@@ -1582,7 +1593,25 @@ function base64ToBlobUrl(base64, mime) {
   return URL.createObjectURL(blob);
 }
 
-const IS_IOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+const IS_IOS = /iPhone|iPad|iPod/i.test(navigator.userAgent) ||
+  (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1); // iPadOS 13+
+
+// iOS requires a synchronous play() during a user gesture to unlock audio.
+// After unlock, subsequent play() calls (even after async work) are allowed.
+let audioUnlocked = false;
+function unlockAudioOnce() {
+  if (audioUnlocked) return;
+  audioUnlocked = true;
+  try {
+    // Tiny silent WAV (44-byte header + 2 zero samples)
+    const silent = new Audio(
+      "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAIlYAAESsAAACABAAZGF0YQAAAAA="
+    );
+    silent.volume = 0;
+    const p = silent.play();
+    if (p && p.then) p.then(() => { try { silent.pause(); } catch(e){} }).catch(() => {});
+  } catch (e) { /* ignore */ }
+}
 
 async function speakAIResponse(text) {
   if (!isTTSEnabled()) return;
@@ -1602,12 +1631,15 @@ async function speakAIResponse(text) {
       body: JSON.stringify({
         text: text,
         rate: getTTSSpeed(),
-        persona: getPersonaKey()
+        persona: getPersonaKey(),
+        // iPhone では Gemini の WAV 再生が不安定なので Google Neural2 を強制
+        prefer_google: IS_IOS
       })
     });
     const data = await res.json();
     if (data.error || !data.audio) {
       console.warn("TTS failed:", data.error);
+      showToast(`⚠️ 音声取得失敗: ${(data.error || "unknown").toString().slice(0, 60)}`);
       speakAIResponseBrowserFallback(text);
       return;
     }
@@ -1643,11 +1675,13 @@ async function speakAIResponse(text) {
       }
     } catch (e) {
       console.warn("audio play failed:", e);
+      showToast(`⚠️ 音声再生ブロック: ${String(e.message || e).slice(0, 60)}`);
       cleanup();
       speakAIResponseBrowserFallback(text);
     }
   } catch (e) {
     console.warn("TTS request failed:", e);
+    showToast(`⚠️ 音声通信失敗: ${String(e.message || e).slice(0, 60)}`);
     speakAIResponseBrowserFallback(text);
   }
 }
@@ -1685,6 +1719,7 @@ function autoGrow() {
 function isMobile() { return /iPhone|iPad|Android/i.test(navigator.userAgent); }
 
 async function sendMessage() {
+  unlockAudioOnce();
   const input = document.getElementById("chat-input");
   const text = input.value.trim();
   if (!text || state.isGenerating) return;
