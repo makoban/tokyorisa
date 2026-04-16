@@ -663,7 +663,7 @@
   <div class="dash-header">
     <img src="../assets/risa-icon.jpeg" alt="Risa">
     <div class="greeting">
-      <h1>Risa's Studio 🌸 <span class="version-badge">Ver 2.5.5</span></h1>
+      <h1>Risa's Studio 🌸 <span class="version-badge">Ver 2.5.6</span></h1>
       <p id="greeting-text">こんにちは Risaさん</p>
     </div>
   </div>
@@ -1533,9 +1533,10 @@ function cycleTTSSpeed() {
   const speed = TTS_SPEEDS[ttsSpeedIndex];
   refreshTTSSpeedButton();
   showToast(`${getPersona().name}の声の速度: ${speed}x`);
-  // Stop current playback if any
-  stopCurrentAudio();
-  currentAudio = null;
+  // Apply to currently playing audio in real time (no restart needed)
+  if (ttsAudioEl && !ttsAudioEl.paused) {
+    try { ttsAudioEl.playbackRate = speed; } catch(e) {}
+  }
 }
 // persona切替時にそのpersona用の速度を読み直す
 function reloadTTSSpeedForPersona() {
