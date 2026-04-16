@@ -663,7 +663,7 @@
   <div class="dash-header">
     <img src="../assets/risa-icon.jpeg" alt="Risa">
     <div class="greeting">
-      <h1>Risa's Studio 🌸 <span class="version-badge">Ver 2.5.1</span></h1>
+      <h1>Risa's Studio 🌸 <span class="version-badge">Ver 2.5.2</span></h1>
       <p id="greeting-text">こんにちは Risaさん</p>
     </div>
   </div>
@@ -1367,20 +1367,23 @@ function showTyping() {
   const typing = document.createElement("div");
   typing.className = "msg msg-ai";
   typing.id = "typing-indicator";
-  const voiceMode = isTTSEnabled();
-  if (voiceMode) {
-    typing.innerHTML = `<div class="msg-bubble msg-typing"><span></span><span></span><span></span><div style="font-size:0.75em;color:var(--accent2);margin-top:6px;">🎤 返答を準備しています...</div></div>`;
-  } else {
-    typing.innerHTML = `<div class="msg-bubble msg-typing"><span></span><span></span><span></span></div>`;
-  }
+  typing.innerHTML = `<div class="msg-bubble msg-typing"><span></span><span></span><span></span><div class="typing-label" style="font-size:0.75em;color:var(--accent2);margin-top:6px;">💭 考えています...</div></div>`;
   messages.appendChild(typing);
   messages.scrollTop = messages.scrollHeight;
 }
 function updateTypingLabel(text) {
   const el = document.getElementById("typing-indicator");
   if (!el) return;
-  const label = el.querySelector("div[style]");
+  const label = el.querySelector(".typing-label");
   if (label) label.textContent = text;
+}
+
+// Minimum "thinking" delay — makes the reporter feel deliberate, not robotic.
+const MIN_THINKING_MS = 2000;
+function thinkingDelay(startTime) {
+  const elapsed = Date.now() - startTime;
+  const remaining = MIN_THINKING_MS - elapsed;
+  return remaining > 0 ? new Promise(r => setTimeout(r, remaining)) : Promise.resolve();
 }
 function hideTyping() { const t = document.getElementById("typing-indicator"); if (t) t.remove(); }
 
@@ -1797,11 +1800,13 @@ async function sendMessage() {
   addMessage("risa", text);
   state.isGenerating = true;
   const voiceMode = isTTSEnabled();
+  const thinkStart = Date.now();
   showTyping();
   try {
     const reply = await callGeminiChat();
+    // Wait minimum thinking time — makes the reporter feel deliberate
+    await thinkingDelay(thinkStart);
     if (voiceMode) {
-      // Keep typing indicator, update label to show TTS phase
       updateTypingLabel("🔊 音声を準備中...");
     } else {
       hideTyping();
@@ -1809,11 +1814,9 @@ async function sendMessage() {
     addMessage("ai", reply);
     saveSessionConversation();
     if (voiceMode) {
-      // TTS: speak AI reply — hideTyping on play start or failure
       await speakAIResponse(reply);
       hideTyping();
     }
-    // Update progress meter (fire-and-forget, don't block)
     updateProgressMeter();
   } catch (e) {
     hideTyping();
