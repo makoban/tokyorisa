@@ -663,7 +663,7 @@
   <div class="dash-header">
     <img src="../assets/risa-icon.jpeg" alt="Risa">
     <div class="greeting">
-      <h1>Risa's Studio 🌸 <span class="version-badge">Ver 2.5.3</span></h1>
+      <h1>Risa's Studio 🌸 <span class="version-badge">Ver 2.5.4</span></h1>
       <p id="greeting-text">こんにちは Risaさん</p>
     </div>
   </div>
@@ -1510,7 +1510,7 @@ const TTS_SPEEDS = [0.9, 1.0, 1.25, 1.5, 1.75, 2.0];
 // Persona別デフォルト速度(index in TTS_SPEEDS)
 const PERSONA_DEFAULT_SPEED_IDX = {
   sanoichi: 3, // 1.5x (低音男性声は速くても耐える)
-  hanako:   2, // 1.25x (女性高音は速くすると硬くなる)
+  hanako:   1, // 1.0x (自然な速度)
 };
 function speedStorageKey() { return `ttsSpeedIdx_${getPersonaKey()}`; }
 function loadTTSSpeedIndex() {
