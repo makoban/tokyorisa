@@ -663,7 +663,7 @@
   <div class="dash-header">
     <img src="../assets/risa-icon.jpeg" alt="Risa">
     <div class="greeting">
-      <h1>Risa's Studio 🌸 <span class="version-badge">Ver 2.5.4</span></h1>
+      <h1>Risa's Studio 🌸 <span class="version-badge">Ver 2.5.5</span></h1>
       <p id="greeting-text">こんにちは Risaさん</p>
     </div>
   </div>
@@ -1379,7 +1379,7 @@ function updateTypingLabel(text) {
 }
 
 // Minimum "thinking" delay — makes the reporter feel deliberate, not robotic.
-const MIN_THINKING_MS = 4000;
+const MIN_THINKING_MS = 8000;
 function thinkingDelay(startTime) {
   const elapsed = Date.now() - startTime;
   const remaining = MIN_THINKING_MS - elapsed;
