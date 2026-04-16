@@ -418,6 +418,78 @@
     text-align: center; color: var(--muted); font-size: 0.72em;
     padding: 8px 16px; background: rgba(0,0,0,0.3); flex-shrink: 0;
   }
+  /* ========== Mode switcher (per-turn response/input toggles) ========== */
+  .mode-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    background: rgba(0,0,0,0.35);
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+    flex-wrap: wrap;
+  }
+  .mode-bar .mode-label {
+    font-size: 0.68em;
+    color: var(--muted);
+    white-space: nowrap;
+    min-width: 72px;
+  }
+  .mode-group {
+    display: inline-flex;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+  .mode-chip {
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    padding: 5px 11px;
+    font-size: 0.72em;
+    cursor: pointer;
+    font-family: inherit;
+    white-space: nowrap;
+    transition: all 0.15s;
+  }
+  .mode-chip + .mode-chip { border-left: 1px solid var(--border); }
+  .mode-chip.active {
+    background: linear-gradient(90deg, rgba(255,110,199,0.25), rgba(110,224,255,0.2));
+    color: var(--gold);
+    font-weight: bold;
+  }
+  .mode-chip:active { transform: scale(0.95); }
+  .mode-speed {
+    margin-left: auto;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: 12px;
+    padding: 4px 9px;
+    font-size: 0.68em;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .mode-speed.on { color: var(--gold); border-color: var(--gold); }
+  .fallback-notice {
+    display: none;
+    text-align: center;
+    font-size: 0.7em;
+    color: var(--gold);
+    padding: 3px 12px;
+    background: rgba(255,211,105,0.08);
+    border-top: 1px solid rgba(255,211,105,0.2);
+    flex-shrink: 0;
+  }
+  .fallback-notice.show { display: block; }
+  /* Hide the mic button when in keyboard-only input mode */
+  body.input-mode-keyboard #voice-btn { display: none; }
+  body.input-mode-voice .chat-input-area textarea { flex: 0.6; }
+  body.input-mode-voice #voice-btn {
+    width: 56px; height: 56px; font-size: 1.6em;
+    box-shadow: 0 0 18px rgba(255,110,199,0.25);
+  }
   .progress-bar {
     background: rgba(0,0,0,0.4);
     border-bottom: 1px solid var(--border);
@@ -589,7 +661,7 @@
   <div class="dash-header">
     <img src="../assets/risa-icon.jpeg" alt="Risa">
     <div class="greeting">
-      <h1>Risa's Studio 🌸 <span class="version-badge">Ver 2.3</span></h1>
+      <h1>Risa's Studio 🌸 <span class="version-badge">Ver 2.4</span></h1>
       <p id="greeting-text">こんにちは Risaさん</p>
     </div>
   </div>
@@ -690,17 +762,28 @@
     <div class="progress-detail" id="progress-detail"></div>
   </div>
   <div class="chat-messages" id="messages"></div>
+  <div class="fallback-notice" id="fallback-notice">⚠️ 最新AI音声が不安定なので旧音声に切替中</div>
+  <div class="mode-bar" id="mode-bar-response">
+    <span class="mode-label">🎤 記者の応答</span>
+    <div class="mode-group" role="tablist" aria-label="応答モード">
+      <button type="button" class="mode-chip" data-resp="voice_text" onclick="setResponseMode('voice_text')">🔊+文字</button>
+      <button type="button" class="mode-chip" data-resp="text_only" onclick="setResponseMode('text_only')">📝文字だけ</button>
+    </div>
+    <button type="button" class="mode-speed" id="tts-speed" onclick="cycleTTSSpeed()">⏩ 速度 1.0x</button>
+  </div>
+  <div class="mode-bar" id="mode-bar-input">
+    <span class="mode-label">✍️ わたしの入力</span>
+    <div class="mode-group" role="tablist" aria-label="入力モード">
+      <button type="button" class="mode-chip" data-input="voice" onclick="setInputMode('voice')">🎤 声で話す</button>
+      <button type="button" class="mode-chip" data-input="keyboard" onclick="setInputMode('keyboard')">⌨️ 文字で書く</button>
+    </div>
+  </div>
   <div class="chat-input-area">
     <button class="voice-btn" id="voice-btn" title="音声入力">🎤</button>
-    <textarea id="chat-input" placeholder="メッセージ / 🎤で音声入力" rows="1"></textarea>
+    <textarea id="chat-input" placeholder="メッセージ" rows="1"></textarea>
     <button class="send-btn" id="send-btn">▶</button>
   </div>
-  <div class="footer-tip">
-    <button class="voice-toggle-tts" id="tts-toggle" onclick="toggleTTS()">🔊 読み上げ OFF</button>
-    &nbsp;
-    <button class="voice-toggle-tts" id="tts-speed" onclick="cycleTTSSpeed()">⏩ 速度 1.0x</button>
-    &nbsp;&nbsp;疲れたら「記事化」で終了 🌸
-  </div>
+  <div class="footer-tip">疲れたら「記事化」で終了 🌸</div>
 </section>
 
 <!-- ========== ARTICLE ========== -->
@@ -777,6 +860,61 @@ function applyPersonaUI() {
   });
 }
 
+// ============================================================
+// RESPONSE / INPUT MODE (per-turn switchable, persisted)
+// ============================================================
+// responseMode: "voice_text" (🔊+文字) | "text_only" (📝文字だけ)
+// inputMode:    "voice" (🎤声で話す)  | "keyboard" (⌨️文字で書く)
+function getResponseMode() {
+  const v = localStorage.getItem("risa_resp_mode");
+  return (v === "text_only" || v === "voice_text") ? v : "voice_text";
+}
+function getInputMode() {
+  const v = localStorage.getItem("risa_input_mode");
+  return (v === "keyboard" || v === "voice") ? v : "voice";
+}
+function setResponseMode(mode) {
+  if (mode !== "voice_text" && mode !== "text_only") return;
+  localStorage.setItem("risa_resp_mode", mode);
+  applyResponseModeUI();
+  // If switching away from voice_text, stop any in-flight audio
+  if (mode === "text_only" && currentAudio) {
+    try { currentAudio.pause(); } catch(e) {}
+    currentAudio = null;
+  }
+  showToast(mode === "voice_text" ? "🔊 音声+文字で返答します" : "📝 文字だけで返答します");
+}
+function setInputMode(mode) {
+  if (mode !== "voice" && mode !== "keyboard") return;
+  localStorage.setItem("risa_input_mode", mode);
+  applyInputModeUI();
+  // If switching to keyboard while listening, stop voice input
+  if (mode === "keyboard" && isListening) {
+    try { recognition && recognition.stop(); } catch(e) {}
+    stopVoiceInput();
+  }
+  if (mode === "keyboard") {
+    const ta = document.getElementById("chat-input");
+    if (ta) setTimeout(() => ta.focus(), 100);
+  }
+  showToast(mode === "voice" ? "🎤 声で話すモード" : "⌨️ 文字で書くモード");
+}
+function applyResponseModeUI() {
+  const mode = getResponseMode();
+  document.querySelectorAll(".mode-chip[data-resp]").forEach(b => {
+    b.classList.toggle("active", b.dataset.resp === mode);
+  });
+}
+function applyInputModeUI() {
+  const mode = getInputMode();
+  document.querySelectorAll(".mode-chip[data-input]").forEach(b => {
+    b.classList.toggle("active", b.dataset.input === mode);
+  });
+  document.body.classList.toggle("input-mode-voice", mode === "voice");
+  document.body.classList.toggle("input-mode-keyboard", mode === "keyboard");
+}
+function isTTSEnabled() { return getResponseMode() === "voice_text"; }
+
 const state = {
   topic: null,
   workInfo: null,
@@ -794,6 +932,11 @@ function showScreen(id) {
   document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
   document.getElementById(id).classList.add("active");
   if (id === "screen-dashboard") loadDashboard();
+  if (id === "screen-chat") {
+    applyResponseModeUI();
+    applyInputModeUI();
+    showFallbackNotice(false);
+  }
 }
 
 function resetState() {
@@ -1229,7 +1372,6 @@ function hideTyping() { const t = document.getElementById("typing-indicator"); i
 // ============================================================
 let recognition = null;
 let isListening = false;
-let ttsEnabled = false;
 let silenceTimer = null;
 let finalTranscript = "";
 const SILENCE_TIMEOUT_MS = 10000; // 10 seconds
@@ -1332,25 +1474,10 @@ document.getElementById("voice-btn").onclick = () => {
     stopVoiceInput();
   } else {
     startVoiceInput();
-    // First time using voice input → auto enable TTS for full voice conversation
-    if (!ttsEnabled && !state.ttsAutoEnabled) {
-      ttsEnabled = true;
-      state.ttsAutoEnabled = true;
-      const btn = document.getElementById("tts-toggle");
-      btn.textContent = "🔊 読み上げ ON";
-      btn.classList.add("on");
-      showToast("🔊 読み上げも自動でONにしました");
-    }
+    // First time pressing mic → also switch input mode to voice if not already
+    if (getInputMode() !== "voice") setInputMode("voice");
   }
 };
-
-function toggleTTS() {
-  ttsEnabled = !ttsEnabled;
-  const btn = document.getElementById("tts-toggle");
-  btn.textContent = ttsEnabled ? "🔊 読み上げ ON" : "🔊 読み上げ OFF";
-  btn.classList.toggle("on", ttsEnabled);
-  if (!ttsEnabled && window.speechSynthesis) window.speechSynthesis.cancel();
-}
 
 // TTS speed cycle — persona別のデフォルト。速すぎるとNeural2は機械っぽくなる。
 const TTS_SPEEDS = [0.9, 1.0, 1.25, 1.5, 1.75, 2.0];
@@ -1433,8 +1560,19 @@ if (window.speechSynthesis) {
 
 let currentAudio = null;
 
+function showFallbackNotice(show, reason) {
+  const el = document.getElementById("fallback-notice");
+  if (!el) return;
+  if (show) {
+    el.textContent = "⚠️ 最新AI音声が不安定なので旧音声に切替中" + (reason ? ` (${reason.slice(0, 40)})` : "");
+    el.classList.add("show");
+  } else {
+    el.classList.remove("show");
+  }
+}
+
 async function speakAIResponse(text) {
-  if (!ttsEnabled) return;
+  if (!isTTSEnabled()) return;
   // Stop any ongoing audio
   if (currentAudio) { try { currentAudio.pause(); } catch(e){} currentAudio = null; }
   if (window.speechSynthesis) { try { window.speechSynthesis.cancel(); } catch(e){} }
@@ -1457,6 +1595,9 @@ async function speakAIResponse(text) {
       speakAIResponseBrowserFallback(text);
       return;
     }
+    // Show/hide fallback notice (Gemini→Neural2 fallback surfaces here)
+    showFallbackNotice(!!data.fallback, data.fallback_reason);
+
     const mime = data.mime || "audio/mp3";
     currentAudio = new Audio(`data:${mime};base64,` + data.audio);
     // Gemini TTSはサーバー側に速度指定がないので、クライアントでplaybackRate調整
