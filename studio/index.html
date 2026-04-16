@@ -661,7 +661,7 @@
   <div class="dash-header">
     <img src="../assets/risa-icon.jpeg" alt="Risa">
     <div class="greeting">
-      <h1>Risa's Studio 🌸 <span class="version-badge">Ver 2.4</span></h1>
+      <h1>Risa's Studio 🌸 <span class="version-badge">Ver 2.4.1</span></h1>
       <p id="greeting-text">こんにちは Risaさん</p>
     </div>
   </div>
@@ -1571,14 +1571,30 @@ function showFallbackNotice(show, reason) {
   }
 }
 
+// iOS Safari では data: URL に実用サイズ上限がある(WAVは非圧縮で巨大化しがち)
+// Blob URL 経由にすると大きなペイロードでも再生できる。
+function base64ToBlobUrl(base64, mime) {
+  const bin = atob(base64);
+  const len = bin.length;
+  const u8 = new Uint8Array(len);
+  for (let i = 0; i < len; i++) u8[i] = bin.charCodeAt(i);
+  const blob = new Blob([u8], { type: mime });
+  return URL.createObjectURL(blob);
+}
+
+const IS_IOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+
 async function speakAIResponse(text) {
   if (!isTTSEnabled()) return;
   // Stop any ongoing audio
-  if (currentAudio) { try { currentAudio.pause(); } catch(e){} currentAudio = null; }
+  if (currentAudio) {
+    try { currentAudio.pause(); } catch(e){}
+    if (currentAudio._blobUrl) URL.revokeObjectURL(currentAudio._blobUrl);
+    currentAudio = null;
+  }
   if (window.speechSynthesis) { try { window.speechSynthesis.cancel(); } catch(e){} }
 
   // Worker-side TTS (provider chosen per persona: google-neural2 or gemini-tts)
-  // Neural2: speakingRate sent as `rate`. Gemini: no server-side speed, apply playbackRate client-side.
   try {
     const res = await fetch(`${API_BASE}/api/tts`, {
       method: "POST",
@@ -1599,18 +1615,37 @@ async function speakAIResponse(text) {
     showFallbackNotice(!!data.fallback, data.fallback_reason);
 
     const mime = data.mime || "audio/mp3";
-    currentAudio = new Audio(`data:${mime};base64,` + data.audio);
-    // Gemini TTSはサーバー側に速度指定がないので、クライアントでplaybackRate調整
-    if (data.engine === "gemini-tts") {
-      currentAudio.playbackRate = getTTSSpeed();
-    }
-    currentAudio.onended = () => { currentAudio = null; };
-    currentAudio.onerror = () => { currentAudio = null; };
-    currentAudio.play().catch(e => {
-      console.warn("audio play failed:", e);
+    // Use Blob URL (not data: URL) — required for iOS Safari with large WAV payloads
+    const blobUrl = base64ToBlobUrl(data.audio, mime);
+    currentAudio = new Audio(blobUrl);
+    currentAudio._blobUrl = blobUrl;
+
+    const cleanup = () => {
+      if (currentAudio && currentAudio._blobUrl) {
+        URL.revokeObjectURL(currentAudio._blobUrl);
+      }
       currentAudio = null;
+    };
+    currentAudio.onended = cleanup;
+    currentAudio.onerror = (ev) => {
+      console.warn("audio element error:", ev);
+      cleanup();
+    };
+
+    try {
+      await currentAudio.play();
+      // Set playbackRate AFTER play() — iOS Safari ignores pre-play rate changes
+      // and misbehaves with extreme rates. Clamp to safe range on iOS.
+      if (data.engine === "gemini-tts") {
+        const raw = getTTSSpeed();
+        const rate = IS_IOS ? Math.min(1.5, Math.max(1.0, raw)) : raw;
+        try { currentAudio.playbackRate = rate; } catch(e) { console.warn("playbackRate err:", e); }
+      }
+    } catch (e) {
+      console.warn("audio play failed:", e);
+      cleanup();
       speakAIResponseBrowserFallback(text);
-    });
+    }
   } catch (e) {
     console.warn("TTS request failed:", e);
     speakAIResponseBrowserFallback(text);
