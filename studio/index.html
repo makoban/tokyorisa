@@ -663,7 +663,7 @@
   <div class="dash-header">
     <img src="../assets/risa-icon.jpeg" alt="Risa">
     <div class="greeting">
-      <h1>Risa's Studio 🌸 <span class="version-badge">Ver 2.5</span></h1>
+      <h1>Risa's Studio 🌸 <span class="version-badge">Ver 2.5.1</span></h1>
       <p id="greeting-text">こんにちは Risaさん</p>
     </div>
   </div>
@@ -1367,9 +1367,20 @@ function showTyping() {
   const typing = document.createElement("div");
   typing.className = "msg msg-ai";
   typing.id = "typing-indicator";
-  typing.innerHTML = `<div class="msg-bubble msg-typing"><span></span><span></span><span></span></div>`;
+  const voiceMode = isTTSEnabled();
+  if (voiceMode) {
+    typing.innerHTML = `<div class="msg-bubble msg-typing"><span></span><span></span><span></span><div style="font-size:0.75em;color:var(--accent2);margin-top:6px;">🎤 返答を準備しています...</div></div>`;
+  } else {
+    typing.innerHTML = `<div class="msg-bubble msg-typing"><span></span><span></span><span></span></div>`;
+  }
   messages.appendChild(typing);
   messages.scrollTop = messages.scrollHeight;
+}
+function updateTypingLabel(text) {
+  const el = document.getElementById("typing-indicator");
+  if (!el) return;
+  const label = el.querySelector("div[style]");
+  if (label) label.textContent = text;
 }
 function hideTyping() { const t = document.getElementById("typing-indicator"); if (t) t.remove(); }
 
@@ -1669,29 +1680,12 @@ function stopCurrentAudio() {
   }
 }
 
-function showTTSPreparing(show) {
-  let el = document.getElementById("tts-preparing");
-  if (show && !el) {
-    el = document.createElement("div");
-    el.id = "tts-preparing";
-    el.style.cssText = "text-align:center;font-size:0.72em;color:var(--accent2);padding:4px 0;animation:fadeIn 0.3s;";
-    el.textContent = "🔊 音声を準備中...";
-    const msgs = document.getElementById("messages");
-    if (msgs) msgs.appendChild(el);
-    msgs.scrollTop = msgs.scrollHeight;
-  } else if (!show && el) {
-    el.remove();
-  }
-}
-
 async function speakAIResponse(text) {
   if (!isTTSEnabled()) return;
   // Stop any in-flight playback on the shared element
   stopCurrentAudio();
   currentAudio = null;
   if (window.speechSynthesis) { try { window.speechSynthesis.cancel(); } catch(e){} }
-
-  showTTSPreparing(true);
 
   try {
     const res = await fetch(`${API_BASE}/api/tts`, {
@@ -1704,7 +1698,6 @@ async function speakAIResponse(text) {
       })
     });
     const data = await res.json();
-    showTTSPreparing(false);
     if (data.error || !data.audio) {
       console.warn("TTS failed:", data.error);
       showToast(`⚠️ 音声取得失敗: ${(data.error || "unknown").toString().slice(0, 60)}`);
@@ -1749,7 +1742,6 @@ async function speakAIResponse(text) {
       speakAIResponseBrowserFallback(text);
     }
   } catch (e) {
-    showTTSPreparing(false);
     console.warn("TTS request failed:", e);
     showToast(`⚠️ 音声通信失敗: ${String(e.message || e).slice(0, 60)}`);
     speakAIResponseBrowserFallback(text);
@@ -1804,14 +1796,23 @@ async function sendMessage() {
   input.blur();
   addMessage("risa", text);
   state.isGenerating = true;
+  const voiceMode = isTTSEnabled();
   showTyping();
   try {
     const reply = await callGeminiChat();
-    hideTyping();
+    if (voiceMode) {
+      // Keep typing indicator, update label to show TTS phase
+      updateTypingLabel("🔊 音声を準備中...");
+    } else {
+      hideTyping();
+    }
     addMessage("ai", reply);
     saveSessionConversation();
-    // TTS: speak AI reply if enabled
-    speakAIResponse(reply);
+    if (voiceMode) {
+      // TTS: speak AI reply — hideTyping on play start or failure
+      await speakAIResponse(reply);
+      hideTyping();
+    }
     // Update progress meter (fire-and-forget, don't block)
     updateProgressMeter();
   } catch (e) {
