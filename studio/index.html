@@ -663,7 +663,7 @@
   <div class="dash-header">
     <img src="../assets/risa-icon.jpeg" alt="Risa">
     <div class="greeting">
-      <h1>Risa's Studio 🌸 <span class="version-badge">Ver 2.5.2</span></h1>
+      <h1>Risa's Studio 🌸 <span class="version-badge">Ver 2.5.3</span></h1>
       <p id="greeting-text">こんにちは Risaさん</p>
     </div>
   </div>
@@ -1379,7 +1379,7 @@ function updateTypingLabel(text) {
 }
 
 // Minimum "thinking" delay — makes the reporter feel deliberate, not robotic.
-const MIN_THINKING_MS = 2000;
+const MIN_THINKING_MS = 4000;
 function thinkingDelay(startTime) {
   const elapsed = Date.now() - startTime;
   const remaining = MIN_THINKING_MS - elapsed;
@@ -1683,13 +1683,11 @@ function stopCurrentAudio() {
   }
 }
 
-async function speakAIResponse(text) {
-  if (!isTTSEnabled()) return;
-  // Stop any in-flight playback on the shared element
+// Fetch TTS data from worker (no playback). Returns { data, text } or null on error.
+async function fetchTTSData(text) {
   stopCurrentAudio();
   currentAudio = null;
   if (window.speechSynthesis) { try { window.speechSynthesis.cancel(); } catch(e){} }
-
   try {
     const res = await fetch(`${API_BASE}/api/tts`, {
       method: "POST",
@@ -1704,51 +1702,53 @@ async function speakAIResponse(text) {
     if (data.error || !data.audio) {
       console.warn("TTS failed:", data.error);
       showToast(`⚠️ 音声取得失敗: ${(data.error || "unknown").toString().slice(0, 60)}`);
-      speakAIResponseBrowserFallback(text);
-      return;
+      return null;
     }
-    // Show/hide fallback notice (Gemini→Neural2 fallback surfaces here)
     showFallbackNotice(!!data.fallback, data.fallback_reason);
-
-    const mime = data.mime || "audio/mp3";
-    const el = ensureTTSAudioEl();
-
-    const onEnded = () => {
-      el.removeEventListener("ended", onEnded);
-      el.removeEventListener("error", onError);
-      currentAudio = null;
-    };
-    const onError = (ev) => {
-      console.warn("audio element error:", ev);
-      el.removeEventListener("ended", onEnded);
-      el.removeEventListener("error", onError);
-      currentAudio = null;
-    };
-    el.addEventListener("ended", onEnded);
-    el.addEventListener("error", onError);
-
-    try {
-      await playAudioBase64(data.audio, mime);
-      currentAudio = el;
-      // Set playbackRate AFTER play() — iOS ignores pre-play rate changes.
-      if (data.engine === "gemini-tts") {
-        const raw = getTTSSpeed();
-        const rate = IS_IOS ? Math.min(1.5, Math.max(1.0, raw)) : raw;
-        try { el.playbackRate = rate; } catch(e) { console.warn("playbackRate err:", e); }
-      }
-    } catch (e) {
-      console.warn("audio play failed:", e);
-      showToast(`⚠️ 音声再生ブロック: ${String(e.message || e).slice(0, 60)}`);
-      el.removeEventListener("ended", onEnded);
-      el.removeEventListener("error", onError);
-      currentAudio = null;
-      speakAIResponseBrowserFallback(text);
-    }
+    return { data, text };
   } catch (e) {
     console.warn("TTS request failed:", e);
     showToast(`⚠️ 音声通信失敗: ${String(e.message || e).slice(0, 60)}`);
-    speakAIResponseBrowserFallback(text);
+    return null;
   }
+}
+
+// Play previously fetched TTS data. Falls back to browser TTS on failure.
+function playTTSData(ttsResult, fallbackText) {
+  if (!ttsResult || !ttsResult.data) {
+    speakAIResponseBrowserFallback(fallbackText);
+    return;
+  }
+  const data = ttsResult.data;
+  const mime = data.mime || "audio/mp3";
+  const el = ensureTTSAudioEl();
+
+  const onEnded = () => { el.removeEventListener("ended", onEnded); el.removeEventListener("error", onError); currentAudio = null; };
+  const onError = (ev) => { console.warn("audio error:", ev); el.removeEventListener("ended", onEnded); el.removeEventListener("error", onError); currentAudio = null; };
+  el.addEventListener("ended", onEnded);
+  el.addEventListener("error", onError);
+
+  playAudioBase64(data.audio, mime).then(() => {
+    currentAudio = el;
+    if (data.engine === "gemini-tts") {
+      const raw = getTTSSpeed();
+      const rate = IS_IOS ? Math.min(1.5, Math.max(1.0, raw)) : raw;
+      try { el.playbackRate = rate; } catch(e) {}
+    }
+  }).catch(e => {
+    console.warn("audio play failed:", e);
+    el.removeEventListener("ended", onEnded);
+    el.removeEventListener("error", onError);
+    currentAudio = null;
+    speakAIResponseBrowserFallback(fallbackText);
+  });
+}
+
+// Combined fetch+play for non-sendMessage callers (e.g. resumed sessions)
+async function speakAIResponse(text) {
+  if (!isTTSEnabled()) return;
+  const ttsData = await fetchTTSData(text);
+  playTTSData(ttsData, text);
 }
 
 function speakAIResponseBrowserFallback(text) {
@@ -1807,15 +1807,19 @@ async function sendMessage() {
     // Wait minimum thinking time — makes the reporter feel deliberate
     await thinkingDelay(thinkStart);
     if (voiceMode) {
+      // Voice mode: prepare audio BEFORE showing text
       updateTypingLabel("🔊 音声を準備中...");
+      // Pre-fetch TTS while indicator is still showing
+      const ttsData = await fetchTTSData(reply);
+      // Now reveal text + play audio simultaneously
+      hideTyping();
+      addMessage("ai", reply);
+      saveSessionConversation();
+      playTTSData(ttsData, reply);
     } else {
       hideTyping();
-    }
-    addMessage("ai", reply);
-    saveSessionConversation();
-    if (voiceMode) {
-      await speakAIResponse(reply);
-      hideTyping();
+      addMessage("ai", reply);
+      saveSessionConversation();
     }
     updateProgressMeter();
   } catch (e) {
