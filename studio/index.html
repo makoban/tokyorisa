@@ -132,6 +132,56 @@
     letter-spacing: 0.05em;
   }
 
+  /* ========== Audio test panel ========== */
+  .audio-test {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 14px 12px;
+    margin-bottom: 20px;
+  }
+  .audio-test-label {
+    font-size: 0.82em;
+    color: var(--accent2);
+    margin-bottom: 8px;
+    font-weight: bold;
+  }
+  .audio-test-hint {
+    font-size: 0.7em;
+    color: var(--muted);
+    margin-bottom: 10px;
+    line-height: 1.4;
+  }
+  .audio-test-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .audio-test-btn {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 0.85em;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .audio-test-btn:active { transform: scale(0.98); }
+  .audio-test-btn .audio-test-status {
+    font-size: 0.75em;
+    color: var(--muted);
+  }
+  .audio-test-btn.ok { border-color: var(--accent2); }
+  .audio-test-btn.ok .audio-test-status { color: var(--accent2); }
+  .audio-test-btn.ng { border-color: #ff6666; }
+  .audio-test-btn.ng .audio-test-status { color: #ff9999; }
+  .audio-test-btn.loading .audio-test-status { color: var(--gold); }
+
   .history-section-title {
     display: flex; justify-content: space-between; align-items: center;
     margin: 8px 0 12px; color: var(--accent2); font-size: 0.95em;
@@ -661,7 +711,7 @@
   <div class="dash-header">
     <img src="../assets/risa-icon.jpeg" alt="Risa">
     <div class="greeting">
-      <h1>Risa's Studio 🌸 <span class="version-badge">Ver 2.4.2</span></h1>
+      <h1>Risa's Studio 🌸 <span class="version-badge">Ver 2.4.3</span></h1>
       <p id="greeting-text">こんにちは Risaさん</p>
     </div>
   </div>
@@ -683,6 +733,25 @@
         <span class="persona-name">ハナコ</span>
         <span class="persona-desc">共感型・女性・賢い読み</span>
         <span class="persona-badge">NEW AI音声</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="audio-test">
+    <div class="audio-test-label">🔊 音声テスト(デバッグ)</div>
+    <div class="audio-test-hint">iPhoneでどのエンジンが鳴るか切り分け。タップで短いサンプル再生。</div>
+    <div class="audio-test-buttons">
+      <button type="button" class="audio-test-btn" data-test="sanoichi" onclick="runAudioTest('sanoichi')">
+        <span>👨 サノイチ(Neural2男性・MP3)</span>
+        <span class="audio-test-status">未テスト</span>
+      </button>
+      <button type="button" class="audio-test-btn" data-test="hanako-neural2" onclick="runAudioTest('hanako-neural2')">
+        <span>👩 ハナコ(Neural2女性・MP3)</span>
+        <span class="audio-test-status">未テスト</span>
+      </button>
+      <button type="button" class="audio-test-btn" data-test="hanako-gemini" onclick="runAudioTest('hanako-gemini')">
+        <span>✨ ハナコ(最新AI・WAV)</span>
+        <span class="audio-test-status">未テスト</span>
       </button>
     </div>
   </div>
@@ -916,6 +985,77 @@ function applyInputModeUI() {
   document.body.classList.toggle("input-mode-keyboard", mode === "keyboard");
 }
 function isTTSEnabled() { return getResponseMode() === "voice_text"; }
+
+// ============================================================
+// AUDIO TEST (debug buttons on dashboard)
+// ============================================================
+async function runAudioTest(kind) {
+  unlockAudioOnce();
+  const btn = document.querySelector(`.audio-test-btn[data-test="${kind}"]`);
+  const status = btn?.querySelector(".audio-test-status");
+  if (!btn || !status) return;
+
+  btn.className = "audio-test-btn loading";
+  status.textContent = "合成中...";
+
+  const SAMPLE_TEXT = "こんにちは、音声テストです。1、2、3。聞こえていますか?";
+
+  // Decide request params
+  let body;
+  if (kind === "sanoichi") {
+    body = { text: SAMPLE_TEXT, rate: 1.25, persona: "sanoichi" };
+  } else if (kind === "hanako-neural2") {
+    // Force Google Neural2 even for hanako
+    body = { text: SAMPLE_TEXT, rate: 1.25, persona: "hanako", prefer_google: true };
+  } else if (kind === "hanako-gemini") {
+    // Explicitly ask for Gemini (disable iOS auto-fallback)
+    body = { text: SAMPLE_TEXT, rate: 1.0, persona: "hanako", prefer_google: false };
+  } else return;
+
+  try {
+    const res = await fetch(`${API_BASE}/api/tts`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json();
+    if (data.error || !data.audio) {
+      btn.className = "audio-test-btn ng";
+      status.textContent = `❌ ${(data.error || "no audio").toString().slice(0, 30)}`;
+      showToast(`取得失敗: ${data.error || "unknown"}`);
+      return;
+    }
+    status.textContent = `再生中... (${data.engine || "?"})`;
+
+    const mime = data.mime || "audio/mp3";
+    const blobUrl = base64ToBlobUrl(data.audio, mime);
+    const audio = new Audio(blobUrl);
+    audio.onended = () => {
+      URL.revokeObjectURL(blobUrl);
+      btn.className = "audio-test-btn ok";
+      status.textContent = `✅ OK (${data.engine}, ${mime.split("/")[1]})`;
+    };
+    audio.onerror = (ev) => {
+      URL.revokeObjectURL(blobUrl);
+      btn.className = "audio-test-btn ng";
+      status.textContent = `❌ play error`;
+      showToast(`再生エラー: audio element`);
+    };
+    try {
+      await audio.play();
+      // After play starts, confirm it's actually producing output — onended will finalize
+    } catch (e) {
+      URL.revokeObjectURL(blobUrl);
+      btn.className = "audio-test-btn ng";
+      status.textContent = `❌ ${String(e.message || e).slice(0, 30)}`;
+      showToast(`再生ブロック: ${e.message || e}`);
+    }
+  } catch (e) {
+    btn.className = "audio-test-btn ng";
+    status.textContent = `❌ ${String(e.message || e).slice(0, 30)}`;
+    showToast(`通信エラー: ${e.message || e}`);
+  }
+}
 
 const state = {
   topic: null,
