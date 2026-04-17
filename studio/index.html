@@ -485,13 +485,6 @@
     flex-shrink: 0;
   }
   .fallback-notice.show { display: block; }
-  /* Hide the mic button when in keyboard-only input mode */
-  body.input-mode-keyboard #voice-btn { display: none; }
-  body.input-mode-voice .chat-input-area textarea { flex: 0.6; }
-  body.input-mode-voice #voice-btn {
-    width: 56px; height: 56px; font-size: 1.6em;
-    box-shadow: 0 0 18px rgba(255,110,199,0.25);
-  }
   .progress-bar {
     background: rgba(0,0,0,0.4);
     border-bottom: 1px solid var(--border);
@@ -663,7 +656,7 @@
   <div class="dash-header">
     <img src="../assets/risa-icon.jpeg" alt="Risa">
     <div class="greeting">
-      <h1>Risa's Studio 🌸 <span class="version-badge">Ver 2.7</span></h1>
+      <h1>Risa's Studio 🌸 <span class="version-badge">Ver 2.8</span></h1>
       <p id="greeting-text">こんにちは Risaさん</p>
     </div>
   </div>
@@ -772,12 +765,6 @@
       <button type="button" class="mode-chip" data-resp="text_only" onclick="setResponseMode('text_only')">📝文字だけ</button>
     </div>
     <button type="button" class="mode-speed" id="tts-speed" onclick="cycleTTSSpeed()">⏩ 速度 1.0x</button>
-  </div>
-  <div class="mode-bar" id="mode-bar-input">
-    <div class="mode-group" role="tablist" aria-label="入力モード">
-      <button type="button" class="mode-chip" data-input="voice" onclick="setInputMode('voice')">🎤 声で話す</button>
-      <button type="button" class="mode-chip" data-input="keyboard" onclick="setInputMode('keyboard')">⌨️ 文字で書く</button>
-    </div>
   </div>
   <div class="chat-input-area">
     <button class="voice-btn" id="voice-btn" title="音声入力">🎤</button>
