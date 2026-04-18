@@ -656,7 +656,7 @@
   <div class="dash-header">
     <img src="../assets/risa-icon.jpeg" alt="Risa">
     <div class="greeting">
-      <h1>Risa's Studio 🌸 <span class="version-badge">Ver 3.0</span></h1>
+      <h1>Risa's Studio 🌸 <span class="version-badge">Ver 3.1</span></h1>
       <p id="greeting-text">こんにちは Risaさん</p>
     </div>
   </div>
@@ -1494,7 +1494,8 @@ let iosMediaRecorder = null;
 let iosAudioChunks = [];
 let iosStream = null;
 let iosRecording = false;
-let iosSilenceTimer = null;
+let iosStarting = false;
+let iosTranscribing = false;
 const IOS_REC_MAX_MS = 60000; // 60秒上限
 let iosMaxTimer = null;
 
@@ -1520,6 +1521,8 @@ function pickRecorderMime() {
 }
 
 async function startIOSRecording() {
+  if (iosRecording || iosStarting || iosTranscribing) return; // 多重起動ガード
+  iosStarting = true;
   stopCurrentAudio();
   currentAudio = null;
   if (window.speechSynthesis) { try { window.speechSynthesis.cancel(); } catch(e){} }
@@ -1527,6 +1530,7 @@ async function startIOSRecording() {
   try {
     iosStream = await navigator.mediaDevices.getUserMedia({ audio: true });
   } catch (e) {
+    iosStarting = false;
     showToast("マイクの使用が許可されていません");
     return;
   }
@@ -1534,6 +1538,7 @@ async function startIOSRecording() {
   try {
     iosMediaRecorder = mime ? new MediaRecorder(iosStream, { mimeType: mime }) : new MediaRecorder(iosStream);
   } catch (e) {
+    iosStarting = false;
     showToast("録音を開始できません: " + e.message);
     try { iosStream.getTracks().forEach(t => t.stop()); } catch(_){}
     return;
@@ -1546,9 +1551,14 @@ async function startIOSRecording() {
     iosRecording = false;
     if (iosStream) { try { iosStream.getTracks().forEach(t => t.stop()); } catch(_){} iosStream = null; }
     if (iosMaxTimer) { clearTimeout(iosMaxTimer); iosMaxTimer = null; }
-    if (!iosAudioChunks.length) { showToast("音声が録れませんでした"); return; }
-    const blob = new Blob(iosAudioChunks, { type: iosMediaRecorder.mimeType || "audio/webm" });
-    if (blob.size < 1000) { showToast("短すぎます。もう一度話してください"); return; }
+    const chunks = iosAudioChunks;
+    iosAudioChunks = []; // 次回のために即クリア
+    if (!chunks.length) { iosTranscribing = false; showToast("音声が録れませんでした"); return; }
+    const blob = new Blob(chunks, { type: iosMediaRecorder.mimeType || "audio/webm" });
+    if (blob.size < 1000) { iosTranscribing = false; showToast("短すぎます。もう一度話してください"); return; }
+    iosTranscribing = true;
+    btn.textContent = "⋯";
+    btn.disabled = true;
     showToast("🎧 文字起こし中…");
     try {
       const base64 = await blobToBase64(blob);
@@ -1570,10 +1580,15 @@ async function startIOSRecording() {
       if (!data.text) showToast("聞き取れませんでした");
     } catch (e) {
       showToast("通信エラー: " + e.message);
+    } finally {
+      iosTranscribing = false;
+      btn.disabled = false;
+      btn.textContent = "🎤";
     }
   };
   iosMediaRecorder.start();
   iosRecording = true;
+  iosStarting = false;
   btn.classList.add("listening");
   btn.textContent = "⏺";
   showToast("🎤 話してください（タップで停止／最長60秒）");
@@ -1596,6 +1611,7 @@ document.getElementById("voice-btn").onclick = async () => {
   if (getInputMode() !== "voice") setInputMode("voice");
 
   if (IS_IOS) {
+    if (iosTranscribing || iosStarting) return; // 処理中は無視
     if (iosRecording) stopIOSRecording();
     else await startIOSRecording();
     return;
@@ -1897,6 +1913,17 @@ async function sendMessage() {
   if (isListening) {
     try { recognition && recognition.stop(); } catch(e){}
     stopVoiceInput();
+  }
+  // iOS: 録音中に送信されたら録音を破棄（文字起こしが後から入力欄に混入するのを防ぐ）
+  if (iosRecording) {
+    try { if (iosMediaRecorder) { iosMediaRecorder.onstop = null; iosMediaRecorder.stop(); } } catch(e){}
+    if (iosStream) { try { iosStream.getTracks().forEach(t => t.stop()); } catch(_){} iosStream = null; }
+    if (iosMaxTimer) { clearTimeout(iosMaxTimer); iosMaxTimer = null; }
+    iosAudioChunks = [];
+    iosRecording = false;
+    const vb = document.getElementById("voice-btn");
+    vb.classList.remove("listening");
+    vb.textContent = "🎤";
   }
   // Clear input immediately and reset height
   input.value = "";
