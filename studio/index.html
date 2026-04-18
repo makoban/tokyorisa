@@ -656,7 +656,7 @@
   <div class="dash-header">
     <img src="../assets/risa-icon.jpeg" alt="Risa">
     <div class="greeting">
-      <h1>Risa's Studio 🌸 <span class="version-badge">Ver 2.8</span></h1>
+      <h1>Risa's Studio 🌸 <span class="version-badge">Ver 2.9</span></h1>
       <p id="greeting-text">こんにちは Risaさん</p>
     </div>
   </div>
@@ -1382,13 +1382,17 @@ let silenceTimer = null;
 let finalTranscript = "";
 const SILENCE_TIMEOUT_MS = 10000; // 10 seconds
 
+// iOS判定(iPhone/iPad/iPodおよびMac Safariのタッチ対応)
+const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+
 function initSpeechRecognition() {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR) return null;
   const rec = new SR();
   rec.lang = "ja-JP";
-  rec.continuous = true;       // Keep listening through pauses
-  rec.interimResults = true;
+  // iOS Safari は continuous=true で結果を返さないため false にし、onend で自動再開
+  rec.continuous = !IS_IOS;
+  rec.interimResults = !IS_IOS;
   rec.maxAlternatives = 1;
   return rec;
 }
@@ -1399,6 +1403,49 @@ function resetSilenceTimer() {
     showToast("⏱ 10秒間発言なし → マイク停止");
     try { recognition && recognition.stop(); } catch (e) {}
   }, SILENCE_TIMEOUT_MS);
+}
+
+function bindRecognitionHandlers(rec, btn, input) {
+  rec.onstart = () => {
+    isListening = true;
+    btn.classList.add("listening");
+    btn.textContent = "⏺";
+    resetSilenceTimer();
+  };
+  rec.onresult = (e) => {
+    let interim = "";
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      const transcript = e.results[i][0].transcript;
+      if (e.results[i].isFinal) {
+        finalTranscript += transcript;
+      } else {
+        interim += transcript;
+      }
+    }
+    input.value = finalTranscript + interim;
+    input.style.height = "auto";
+    input.style.height = Math.min(120, input.scrollHeight) + "px";
+    resetSilenceTimer();
+  };
+  rec.onerror = (e) => {
+    console.warn("speech err:", e.error);
+    if (e.error === "not-allowed") { showToast("マイクの使用が許可されていません"); stopVoiceInput(); return; }
+    if (e.error === "no-speech") return; // normal during pauses
+    if (e.error !== "aborted") showToast("音声エラー: " + e.error);
+    if (!IS_IOS) stopVoiceInput(); // iOS: onend で再起動するのでここでは止めない
+  };
+  rec.onend = () => {
+    // iOS: continuous=false なので onend で自動再起動して連続認識を擬似再現
+    if (IS_IOS && isListening) {
+      try {
+        recognition = initSpeechRecognition();
+        bindRecognitionHandlers(recognition, btn, input);
+        recognition.start();
+        return;
+      } catch(e) { console.warn("iOS restart failed:", e); }
+    }
+    stopVoiceInput();
+  };
 }
 
 function startVoiceInput() {
@@ -1423,41 +1470,8 @@ function startVoiceInput() {
   const btn = document.getElementById("voice-btn");
   const input = document.getElementById("chat-input");
   finalTranscript = input.value || "";
-
-  recognition.onstart = () => {
-    isListening = true;
-    btn.classList.add("listening");
-    btn.textContent = "⏺";
-    showToast("🎤 話してください (10秒静かで自動停止)");
-    resetSilenceTimer();
-  };
-  recognition.onresult = (e) => {
-    let interim = "";
-    for (let i = e.resultIndex; i < e.results.length; i++) {
-      const transcript = e.results[i][0].transcript;
-      if (e.results[i].isFinal) {
-        finalTranscript += transcript;
-      } else {
-        interim += transcript;
-      }
-    }
-    input.value = finalTranscript + interim;
-    input.style.height = "auto";
-    input.style.height = Math.min(120, input.scrollHeight) + "px";
-    // Reset silence timer whenever we hear anything
-    resetSilenceTimer();
-  };
-  recognition.onerror = (e) => {
-    console.warn("speech err:", e.error);
-    if (e.error === "not-allowed") showToast("マイクの使用が許可されていません");
-    else if (e.error === "no-speech") {
-      // no-speech is normal during silence with continuous mode - ignore
-      return;
-    }
-    else if (e.error !== "aborted") showToast("音声エラー: " + e.error);
-    stopVoiceInput();
-  };
-  recognition.onend = () => { stopVoiceInput(); };
+  bindRecognitionHandlers(recognition, btn, input);
+  showToast("🎤 話してください (10秒静かで自動停止)");
   try { recognition.start(); }
   catch (e) { console.warn(e); stopVoiceInput(); }
 }
