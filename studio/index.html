@@ -656,7 +656,7 @@
   <div class="dash-header">
     <img src="../assets/risa-icon.jpeg" alt="Risa">
     <div class="greeting">
-      <h1>Risa's Studio 🌸 <span class="version-badge">Ver 2.9</span></h1>
+      <h1>Risa's Studio 🌸 <span class="version-badge">Ver 3.0</span></h1>
       <p id="greeting-text">こんにちは Risaさん</p>
     </div>
   </div>
@@ -1486,19 +1486,126 @@ function stopVoiceInput() {
   }
 }
 
+// ============================================================
+// iOS MediaRecorder → Server STT (Gemini)
+// webkitSpeechRecognition は iOS Safari で不安定のため、録音→文字起こしに切替
+// ============================================================
+let iosMediaRecorder = null;
+let iosAudioChunks = [];
+let iosStream = null;
+let iosRecording = false;
+let iosSilenceTimer = null;
+const IOS_REC_MAX_MS = 60000; // 60秒上限
+let iosMaxTimer = null;
+
+function blobToBase64(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const s = reader.result || "";
+      const comma = s.indexOf(",");
+      resolve(comma >= 0 ? s.slice(comma + 1) : s);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
+function pickRecorderMime() {
+  const cands = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/mp4;codecs=mp4a.40.2", "audio/mpeg", "audio/ogg;codecs=opus"];
+  for (const m of cands) {
+    if (window.MediaRecorder && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(m)) return m;
+  }
+  return "";
+}
+
+async function startIOSRecording() {
+  stopCurrentAudio();
+  currentAudio = null;
+  if (window.speechSynthesis) { try { window.speechSynthesis.cancel(); } catch(e){} }
+  const btn = document.getElementById("voice-btn");
+  try {
+    iosStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  } catch (e) {
+    showToast("マイクの使用が許可されていません");
+    return;
+  }
+  const mime = pickRecorderMime();
+  try {
+    iosMediaRecorder = mime ? new MediaRecorder(iosStream, { mimeType: mime }) : new MediaRecorder(iosStream);
+  } catch (e) {
+    showToast("録音を開始できません: " + e.message);
+    try { iosStream.getTracks().forEach(t => t.stop()); } catch(_){}
+    return;
+  }
+  iosAudioChunks = [];
+  iosMediaRecorder.ondataavailable = (ev) => { if (ev.data && ev.data.size > 0) iosAudioChunks.push(ev.data); };
+  iosMediaRecorder.onstop = async () => {
+    btn.classList.remove("listening");
+    btn.textContent = "🎤";
+    iosRecording = false;
+    if (iosStream) { try { iosStream.getTracks().forEach(t => t.stop()); } catch(_){} iosStream = null; }
+    if (iosMaxTimer) { clearTimeout(iosMaxTimer); iosMaxTimer = null; }
+    if (!iosAudioChunks.length) { showToast("音声が録れませんでした"); return; }
+    const blob = new Blob(iosAudioChunks, { type: iosMediaRecorder.mimeType || "audio/webm" });
+    if (blob.size < 1000) { showToast("短すぎます。もう一度話してください"); return; }
+    showToast("🎧 文字起こし中…");
+    try {
+      const base64 = await blobToBase64(blob);
+      const res = await fetch(`${API_BASE}/api/stt`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ audio: base64, mime: blob.type }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        showToast("文字起こし失敗: " + (data.error || res.status));
+        return;
+      }
+      const input = document.getElementById("chat-input");
+      const existing = input.value ? input.value + " " : "";
+      input.value = existing + (data.text || "");
+      input.style.height = "auto";
+      input.style.height = Math.min(120, input.scrollHeight) + "px";
+      if (!data.text) showToast("聞き取れませんでした");
+    } catch (e) {
+      showToast("通信エラー: " + e.message);
+    }
+  };
+  iosMediaRecorder.start();
+  iosRecording = true;
+  btn.classList.add("listening");
+  btn.textContent = "⏺";
+  showToast("🎤 話してください（タップで停止／最長60秒）");
+  iosMaxTimer = setTimeout(() => {
+    if (iosRecording) {
+      showToast("⏱ 最長60秒に到達 → 停止");
+      stopIOSRecording();
+    }
+  }, IOS_REC_MAX_MS);
+}
+
+function stopIOSRecording() {
+  if (!iosMediaRecorder) return;
+  try { iosMediaRecorder.stop(); } catch (e) { console.warn(e); }
+}
+
 document.getElementById("voice-btn").onclick = async () => {
   await unlockAudioOnce();
+  if (getResponseMode() !== "voice_text") setResponseMode("voice_text");
+  if (getInputMode() !== "voice") setInputMode("voice");
+
+  if (IS_IOS) {
+    if (iosRecording) stopIOSRecording();
+    else await startIOSRecording();
+    return;
+  }
+
   if (isListening) {
     try { recognition && recognition.stop(); } catch (e) {}
     stopVoiceInput();
   } else {
     startVoiceInput();
-    // Mic implies full voice conversation → force response mode to voice+text
-    if (getResponseMode() !== "voice_text") {
-      setResponseMode("voice_text");
-    }
-    // First time pressing mic → also switch input mode to voice if not already
-    if (getInputMode() !== "voice") setInputMode("voice");
   }
 };
 
