@@ -1382,9 +1382,6 @@ let silenceTimer = null;
 let finalTranscript = "";
 const SILENCE_TIMEOUT_MS = 10000; // 10 seconds
 
-// iOS判定(iPhone/iPad/iPodおよびMac Safariのタッチ対応)
-const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-
 function initSpeechRecognition() {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR) return null;
